@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Cranberries 小红莓乐队</title>
+    <title>The Cranberries 小红莓乐队 | 爱尔兰摇滚传奇</title>
+    <meta name="description" content="The Cranberries小红莓乐队官方网站介绍，爱尔兰摇滚传奇，代表作品Zombie、Dreams、Linger等">
     <style>
         * {
             margin: 0;
@@ -57,18 +58,8 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            background: url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1920') center/cover;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1920') center/cover;
             position: relative;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
         }
 
         .hero-content {
@@ -122,11 +113,30 @@
             border-radius: 10px;
         }
 
-        /* 音乐来源说明 */
-        .music-note {
-            margin-top: 15px;
-            font-size: 12px;
-            opacity: 0.5;
+        /* 统计数据 */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 50px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .number {
+            font-size: 48px;
+            font-weight: 900;
+            color: #e94560;
+        }
+
+        .stat-item .label {
+            font-size: 14px;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         /* 简介部分 */
@@ -166,14 +176,68 @@
             opacity: 0.9;
         }
 
-        .about-image {
-            position: relative;
-        }
-
         .about-image img {
             width: 100%;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 时间线 */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: #e94560;
+            opacity: 0.3;
+        }
+
+        .timeline-item {
+            display: flex;
+            justify-content: flex-end;
+            padding-right: 50%;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(even) {
+            justify-content: flex-start;
+            padding-right: 0;
+            padding-left: 50%;
+        }
+
+        .timeline-content {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 350px;
+            margin: 0 30px;
+        }
+
+        .timeline-content .year {
+            color: #e94560;
+            font-weight: 900;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .timeline-content h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .timeline-content p {
+            font-size: 14px;
+            opacity: 0.7;
+            line-height: 1.6;
         }
 
         /* 成员部分 */
@@ -217,6 +281,49 @@
             opacity: 0.7;
         }
 
+        /* 专辑部分 */
+        .albums-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .album-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .album-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        .album-cover {
+            height: 250px;
+            background: linear-gradient(135deg, #e94560, #16213e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        .album-info {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .album-info h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .album-info .year {
+            color: #e94560;
+            font-size: 14px;
+        }
+
         /* 歌曲部分 */
         .songs-grid {
             display: grid;
@@ -255,12 +362,32 @@
             opacity: 0.8;
         }
 
+        /* 名言 */
+        .quote-section {
+            background: rgba(233, 69, 96, 0.1);
+            padding: 80px 50px;
+            text-align: center;
+        }
+
+        .quote {
+            font-size: 32px;
+            font-style: italic;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .quote-author {
+            margin-top: 30px;
+            font-size: 18px;
+            opacity: 0.6;
+        }
+
         /* 页脚 */
         footer {
             background: rgba(0, 0, 0, 0.5);
             padding: 50px;
             text-align: center;
-            margin-top: 100px;
         }
 
         footer p {
@@ -270,6 +397,22 @@
 
         footer .love {
             color: #e94560;
+        }
+
+        .social-links {
+            margin-bottom: 30px;
+        }
+
+        .social-links a {
+            color: #fff;
+            font-size: 24px;
+            margin: 0 15px;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .social-links a:hover {
+            opacity: 1;
         }
 
         /* 响应式 */
@@ -289,6 +432,21 @@
 
             .section {
                 padding: 60px 20px;
+            }
+
+            .timeline::before {
+                left: 0;
+            }
+
+            .timeline-item,
+            .timeline-item:nth-child(even) {
+                padding-left: 30px;
+                padding-right: 0;
+                justify-content: flex-start;
+            }
+
+            .timeline-content {
+                margin: 0;
             }
         }
 
@@ -311,7 +469,9 @@
         <ul>
             <li><a href="#home">首页</a></li>
             <li><a href="#about">关于</a></li>
+            <li><a href="#timeline">历程</a></li>
             <li><a href="#members">成员</a></li>
+            <li><a href="#albums">专辑</a></li>
             <li><a href="#songs">金曲</a></li>
         </ul>
     </nav>
@@ -321,7 +481,7 @@
         <div class="hero-content">
             <h1>THE <span>CRANBERRIES</span></h1>
             <p>小红莓乐队</p>
-            <p class="tagline">爱尔兰摇滚传奇 · 1990-2018</p>
+            <p class="tagline">爱尔兰摇滚传奇 · 1990-2019 · 永远的Dolores</p>
             
             <div class="music-player">
                 <h3>🎵 今日推荐：Dreams</h3>
@@ -329,7 +489,22 @@
                     <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
                     您的浏览器不支持音频播放
                 </audio>
-                <p class="music-note">* 由于版权原因，此处使用示例音乐。您可以用小红莓乐队的实际歌曲替换音频文件。</p>
+                <p style="margin-top:15px;font-size:12px;opacity:0.5;">* 示例音乐，可用小红莓实际歌曲替换</p>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="number">6</div>
+                    <div class="label">录音室专辑</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">40M+</div>
+                    <div class="label">唱片销量</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">29</div>
+                    <div class="label">年音乐生涯</div>
+                </div>
             </div>
         </div>
     </section>
@@ -339,13 +514,77 @@
         <h2 class="section-title fade-in">关于乐队</h2>
         <div class="about-content">
             <div class="about-text fade-in">
-                <p>小红莓乐队（The Cranberries）成立于1990年，是来自爱尔兰利默里克郡的摇滚乐队，被认为是爱尔兰最伟大的摇滚乐队之一。</p>
-                <p>乐队以主唱Dolores O'Riordan独特的咽音唱法著称，她的声线时而温柔如梦，时而高亢激昂，成为乐队的标志性元素。</p>
-                <p>2018年1月15日，主唱Dolores O'Riordan在伦敦突然离世，年仅46岁。2019年9月，乐队宣布不再继续，以六张专辑和无数经典曲目永载摇滚乐史册。</p>
-                <p>他们的音乐融合了另类摇滚、流行、民谣和爱尔兰传统音乐元素，影响了无数后辈音乐人。</p>
+                <p><strong>小红莓乐队（The Cranberries）</strong>成立于1990年，来自爱尔兰利默里克郡，是爱尔兰最伟大的摇滚乐队之一，与U2齐名。</p>
+                <p>乐队以主唱<strong>Dolores O'Riordan</strong>独特的咽音唱法著称，她的声线时而温柔如梦，时而高亢激昂，成为乐队的标志性声音，影响了无数后辈女歌手。</p>
+                <p>1994年，单曲《Zombie》横扫全球，成为反战歌曲的经典。乐队在全球售出超过4000万张唱片，获得无数奖项。</p>
+                <p>2018年1月15日，Dolores在伦敦突然离世，年仅46岁。2019年，乐队发行最后一张专辑《In the End》后正式解散，传奇落幕。</p>
             </div>
             <div class="about-image fade-in">
                 <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800" alt="乐队演出">
+            </div>
+        </div>
+    </section>
+
+    <!-- 名言 -->
+    <section class="quote-section">
+        <div class="quote fade-in">
+            "Music is the only thing that makes sense in this world. When you're listening to music, you're not thinking about anything else."
+        </div>
+        <div class="quote-author">— Dolores O'Riordan</div>
+    </section>
+
+    <!-- 乐队历程 -->
+    <section class="section" id="timeline">
+        <h2 class="section-title fade-in">乐队历程</h2>
+        <div class="timeline">
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">1990</div>
+                    <h3>乐队成立</h3>
+                    <p>在爱尔兰利默里克郡成立，原名The Cranberry Saw Us，后改名The Cranberries</p>
+                </div>
+            </div>
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">1993</div>
+                    <h3>首张专辑发行</h3>
+                    <p>《Everybody Else Is Doing It, So Why Can't We?》发行，全球销量超500万张</p>
+                </div>
+            </div>
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">1994</div>
+                    <h3>《Zombie》横空出世</h3>
+                    <p>反战神曲《Zombie》发行，成为乐队最具代表性的作品，影响深远</p>
+                </div>
+            </div>
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">1999</div>
+                    <h3>暂别乐坛</h3>
+                    <p>乐队宣布无限期休整，成员各自发展个人事业</p>
+                </div>
+            </div>
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">2009</div>
+                    <h3>重组回归</h3>
+                    <p>乐队重组，开始新一轮巡演，发行新专辑《Roses》</p>
+                </div>
+            </div>
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">2018</div>
+                    <h3>Dolores离世</h3>
+                    <p>1月15日，主唱Dolores O'Riordan在伦敦突然离世，享年46岁</p>
+                </div>
+            </div>
+            <div class="timeline-item fade-in">
+                <div class="timeline-content">
+                    <div class="year">2019</div>
+                    <h3>传奇落幕</h3>
+                    <p>最后专辑《In the End》发行，乐队正式解散，永载摇滚史册</p>
+                </div>
             </div>
         </div>
     </section>
@@ -358,24 +597,27 @@
                 <img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600" alt="Dolores O'Riordan">
                 <div class="member-info">
                     <h3>Dolores O'Riordan</h3>
-                    <p>主唱 / 键盘手</p>
+                    <p>主唱 / 键盘手 / 词曲作者</p>
                     <p style="margin-top:10px;font-size:12px;opacity:0.5;">1971-2018 · 乐队灵魂人物</p>
+                    <p style="margin-top:10px;font-size:13px;">独特的咽音唱法，影响了Alanis Morissette等无数女歌手</p>
                 </div>
             </div>
             <div class="member-card fade-in">
                 <img src="https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=600" alt="Noel Hogan">
                 <div class="member-info">
                     <h3>Noel Hogan</h3>
-                    <p>吉他手 / 和声</p>
-                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">主要词曲创作者</p>
+                    <p>吉他手 / 和声 / 词曲作者</p>
+                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
+                    <p style="margin-top:10px;font-size:13px;">创作了乐队大部分经典曲目的吉他旋律</p>
                 </div>
             </div>
             <div class="member-card fade-in">
                 <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600" alt="Mike Hogan">
                 <div class="member-info">
                     <h3>Mike Hogan</h3>
-                    <p>贝斯手</p>
+                    <p>贝斯手 / 和声</p>
                     <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
+                    <p style="margin-top:10px;font-size:13px;">Noel的兄弟，负责乐队的低音部分</p>
                 </div>
             </div>
             <div class="member-card fade-in">
@@ -384,6 +626,62 @@
                     <h3>Fergal Lawler</h3>
                     <p>鼓手</p>
                     <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
+                    <p style="margin-top:10px;font-size:13px;">稳健的鼓点为乐队音乐奠定基础</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 专辑 -->
+    <section class="section" id="albums">
+        <h2 class="section-title fade-in">录音室专辑</h2>
+        <div class="albums-grid">
+            <div class="album-card fade-in">
+                <div class="album-cover">🎵</div>
+                <div class="album-info">
+                    <h3>Everybody Else Is Doing It...</h3>
+                    <div class="year">1993</div>
+                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">首张专辑，一鸣惊人</p>
+                </div>
+            </div>
+            <div class="album-card fade-in">
+                <div class="album-cover">🎸</div>
+                <div class="album-info">
+                    <h3>No Need to Argue</h3>
+                    <div class="year">1994</div>
+                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">含《Zombie》，巅峰之作</p>
+                </div>
+            </div>
+            <div class="album-card fade-in">
+                <div class="album-cover">🌹</div>
+                <div class="album-info">
+                    <h3>To the Faithful Departed</h3>
+                    <div class="year">1996</div>
+                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">更成熟多元的风格</p>
+                </div>
+            </div>
+            <div class="album-card fade-in">
+                <div class="album-cover">🌙</div>
+                <div class="album-info">
+                    <h3>Bury the Hatchet</h3>
+                    <div class="year">1999</div>
+                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">休整前的最后专辑</p>
+                </div>
+            </div>
+            <div class="album-card fade-in">
+                <div class="album-cover">🌸</div>
+                <div class="album-info">
+                    <h3>Wake Up and Smell the Coffee</h3>
+                    <div class="year">2001</div>
+                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">千禧年后的力作</p>
+                </div>
+            </div>
+            <div class="album-card fade-in">
+                <div class="album-cover">💫</div>
+                <div class="album-info">
+                    <h3>In the End</h3>
+                    <div class="year">2019</div>
+                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">绝唱，致敬Dolores</p>
                 </div>
             </div>
         </div>
@@ -395,41 +693,57 @@
         <div class="songs-grid">
             <div class="song-card fade-in">
                 <h3>🌹 Zombie</h3>
-                <p class="year">1994 · 《Bad Robot》</p>
-                <p>最著名的反战歌曲，Dolores的高亢嗓音在这首歌中达到巅峰。这首歌成为乐队最具代表性的作品，在全球范围内广为流传。</p>
+                <p class="year">1994 · No Need to Argue</p>
+                <p>最著名的反战歌曲，Dolores高亢的咽音在这首歌中达到巅峰。回应北爱尔兰冲突，成为乐队最具代表性的作品。</p>
             </div>
             <div class="song-card fade-in">
                 <h3>🌙 Dreams</h3>
-                <p class="year">1993 · 《Everybody Else Is Doing It...》</p>
-                <p>乐队首张专辑的主打曲目，轻快的旋律和Dolores梦幻般的声线完美结合，成为乐队的成名曲之一。</p>
+                <p class="year">1993 · Everybody Else Is Doing It...</p>
+                <p>乐队首张专辑的主打曲目，轻快的旋律和Dolores梦幻般的声线完美结合，成为成名曲之一。</p>
             </div>
             <div class="song-card fade-in">
                 <h3>🌸 Linger</h3>
-                <p class="year">1993 · 《Everybody Else Is Doing It...》</p>
+                <p class="year">1993 · Everybody Else Is Doing It...</p>
                 <p>另一首早期经典，旋律优美，歌词深情，展现了乐队在流行摇滚领域的才华。</p>
             </div>
             <div class="song-card fade-in">
                 <h3>👨‍👩‍👧 Ode to My Family</h3>
-                <p class="year">1994 · 《No Need to Argue》</p>
-                <p>探讨家庭主题的深度作品，展现了Dolores歌词创作的成熟与深度。</p>
+                <p class="year">1994 · No Need to Argue</p>
+                <p>探讨家庭主题的深度作品，Dolores歌词创作的成熟展现，感人至深。</p>
             </div>
             <div class="song-card fade-in">
                 <h3>💫 When You're Gone</h3>
-                <p class="year">1997 · 《To the Faithful Departed》</p>
+                <p class="year">1997 · To the Faithful Departed</p>
                 <p>感人至深的抒情歌曲，表达对逝去亲人的思念，在全球获得巨大成功。</p>
             </div>
             <div class="song-card fade-in">
                 <h3>☁️ Animal Instinct</h3>
-                <p class="year">2001 · 《Wake Up and Smell the Coffee》</p>
+                <p class="year">2001 · Wake Up and Smell the Coffee</p>
                 <p>千禧年后的力作，展现乐队与时俱进的音乐创作能力。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>🎬 Just My Imagination</h3>
+                <p class="year">1999 · Bury the Hatchet</p>
+                <p>轻快活泼的节奏，展现乐队多变的一面。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>✨ Promises</h3>
+                <p class="year">1999 · Bury the Hatchet</p>
+                <p>情感丰富的作品，Dolores的声线再次征服听众。</p>
             </div>
         </div>
     </section>
 
     <!-- 页脚 -->
     <footer>
+        <div class="social-links">
+            <a href="https://www.youtube.com" target="_blank">📺</a>
+            <a href="https://www.spotify.com" target="_blank">🎵</a>
+            <a href="https://www.apple.com/music" target="_blank">🍎</a>
+        </div>
         <p>Made with <span class="love">♥</span> for The Cranberries</p>
-        <p style="margin-top:10px;">1990 - 2018 · 永远的小红莓 · Rest in Peace, Dolores</p>
+        <p style="margin-top:10px;">1990 - 2019 · 永远的小红莓</p>
+        <p style="margin-top:5px;opacity:0.4;">Rest in Peace, Dolores O'Riordan (1971-2018)</p>
     </footer>
 
     <script>
