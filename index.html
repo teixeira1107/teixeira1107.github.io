@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Cranberries 小红莓乐队</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* 导航栏 */
+        nav {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 50px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        nav a:hover {
+            color: #e94560;
+        }
+
+        /* 首屏 */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1920') center/cover;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 80px;
+            font-weight: 900;
+            letter-spacing: 10px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+
+        .hero h1 span {
+            color: #e94560;
+        }
+
+        .hero p {
+            font-size: 24px;
+            opacity: 0.8;
+            letter-spacing: 5px;
+        }
+
+        .hero .tagline {
+            margin-top: 30px;
+            font-size: 18px;
+            opacity: 0.6;
+        }
+
+        /* 音乐播放器 */
+        .music-player {
+            margin-top: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px 50px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .music-player h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .music-player audio {
+            width: 400px;
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        /* 音乐来源说明 */
+        .music-note {
+            margin-top: 15px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        /* 简介部分 */
+        .section {
+            padding: 100px 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: #e94560;
+            margin: 20px auto 0;
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .about-text p {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .about-image {
+            position: relative;
+        }
+
+        .about-image img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 成员部分 */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .member-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .member-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(233, 69, 96, 0.3);
+        }
+
+        .member-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .member-info {
+            padding: 25px;
+            text-align: center;
+        }
+
+        .member-info h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #e94560;
+        }
+
+        .member-info p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* 歌曲部分 */
+        .songs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .song-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s;
+            border-left: 4px solid #e94560;
+        }
+
+        .song-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(10px);
+        }
+
+        .song-card h3 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #e94560;
+        }
+
+        .song-card .year {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-bottom: 15px;
+        }
+
+        .song-card p {
+            font-size: 15px;
+            line-height: 1.6;
+            opacity: 0.8;
+        }
+
+        /* 页脚 */
+        footer {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 50px;
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        footer p {
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        footer .love {
+            color: #e94560;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 40px;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+            }
+
+            nav ul {
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+
+            .section {
+                padding: 60px 20px;
+            }
+        }
+
+        /* 滚动动画 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav>
+        <ul>
+            <li><a href="#home">首页</a></li>
+            <li><a href="#about">关于</a></li>
+            <li><a href="#members">成员</a></li>
+            <li><a href="#songs">金曲</a></li>
+        </ul>
+    </nav>
+
+    <!-- 首屏 -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>THE <span>CRANBERRIES</span></h1>
+            <p>小红莓乐队</p>
+            <p class="tagline">爱尔兰摇滚传奇 · 1990-2018</p>
+            
+            <div class="music-player">
+                <h3>🎵 今日推荐：Dreams</h3>
+                <audio controls>
+                    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                    您的浏览器不支持音频播放
+                </audio>
+                <p class="music-note">* 由于版权原因，此处使用示例音乐。您可以用小红莓乐队的实际歌曲替换音频文件。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 关于乐队 -->
+    <section class="section" id="about">
+        <h2 class="section-title fade-in">关于乐队</h2>
+        <div class="about-content">
+            <div class="about-text fade-in">
+                <p>小红莓乐队（The Cranberries）成立于1990年，是来自爱尔兰利默里克郡的摇滚乐队，被认为是爱尔兰最伟大的摇滚乐队之一。</p>
+                <p>乐队以主唱Dolores O'Riordan独特的咽音唱法著称，她的声线时而温柔如梦，时而高亢激昂，成为乐队的标志性元素。</p>
+                <p>2018年1月15日，主唱Dolores O'Riordan在伦敦突然离世，年仅46岁。2019年9月，乐队宣布不再继续，以六张专辑和无数经典曲目永载摇滚乐史册。</p>
+                <p>他们的音乐融合了另类摇滚、流行、民谣和爱尔兰传统音乐元素，影响了无数后辈音乐人。</p>
+            </div>
+            <div class="about-image fade-in">
+                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800" alt="乐队演出">
+            </div>
+        </div>
+    </section>
+
+    <!-- 乐队成员 -->
+    <section class="section" id="members">
+        <h2 class="section-title fade-in">乐队成员</h2>
+        <div class="members-grid">
+            <div class="member-card fade-in">
+                <img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600" alt="Dolores O'Riordan">
+                <div class="member-info">
+                    <h3>Dolores O'Riordan</h3>
+                    <p>主唱 / 键盘手</p>
+                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">1971-2018 · 乐队灵魂人物</p>
+                </div>
+            </div>
+            <div class="member-card fade-in">
+                <img src="https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=600" alt="Noel Hogan">
+                <div class="member-info">
+                    <h3>Noel Hogan</h3>
+                    <p>吉他手 / 和声</p>
+                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">主要词曲创作者</p>
+                </div>
+            </div>
+            <div class="member-card fade-in">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600" alt="Mike Hogan">
+                <div class="member-info">
+                    <h3>Mike Hogan</h3>
+                    <p>贝斯手</p>
+                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
+                </div>
+            </div>
+            <div class="member-card fade-in">
+                <img src="https://images.unsplash.com/photo-1485579149621-3123dd979885?w=600" alt="Fergal Lawler">
+                <div class="member-info">
+                    <h3>Fergal Lawler</h3>
+                    <p>鼓手</p>
+                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 代表金曲 -->
+    <section class="section" id="songs">
+        <h2 class="section-title fade-in">代表金曲</h2>
+        <div class="songs-grid">
+            <div class="song-card fade-in">
+                <h3>🌹 Zombie</h3>
+                <p class="year">1994 · 《Bad Robot》</p>
+                <p>最著名的反战歌曲，Dolores的高亢嗓音在这首歌中达到巅峰。这首歌成为乐队最具代表性的作品，在全球范围内广为流传。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>🌙 Dreams</h3>
+                <p class="year">1993 · 《Everybody Else Is Doing It...》</p>
+                <p>乐队首张专辑的主打曲目，轻快的旋律和Dolores梦幻般的声线完美结合，成为乐队的成名曲之一。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>🌸 Linger</h3>
+                <p class="year">1993 · 《Everybody Else Is Doing It...》</p>
+                <p>另一首早期经典，旋律优美，歌词深情，展现了乐队在流行摇滚领域的才华。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>👨‍👩‍👧 Ode to My Family</h3>
+                <p class="year">1994 · 《No Need to Argue》</p>
+                <p>探讨家庭主题的深度作品，展现了Dolores歌词创作的成熟与深度。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>💫 When You're Gone</h3>
+                <p class="year">1997 · 《To the Faithful Departed》</p>
+                <p>感人至深的抒情歌曲，表达对逝去亲人的思念，在全球获得巨大成功。</p>
+            </div>
+            <div class="song-card fade-in">
+                <h3>☁️ Animal Instinct</h3>
+                <p class="year">2001 · 《Wake Up and Smell the Coffee》</p>
+                <p>千禧年后的力作，展现乐队与时俱进的音乐创作能力。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer>
+        <p>Made with <span class="love">♥</span> for The Cranberries</p>
+        <p style="margin-top:10px;">1990 - 2018 · 永远的小红莓 · Rest in Peace, Dolores</p>
+    </footer>
+
+    <script>
+        // 滚动动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // 平滑滚动
+        document.querySelectorAll('nav a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>
