@@ -3,6 +3,7 @@ const STORAGE = {
   lastActiveDay: "cargo-ledger-last-active-day",
   view: "cargo-ledger-view",
   wecomBridgeUrl: "cargo-ledger-wecom-bridge-url",
+  wecomAutoSync: "cargo-ledger-wecom-auto-sync",
   raw: "cargo-ledger-raw",
   ocrProvider: "cargo-ledger-ocr-provider",
   ocrApiKey: "cargo-ledger-ocr-apikey",
@@ -121,6 +122,7 @@ let state = {
   view: "main",
   dayAutoReset: false,
   wecomBridgeUrl: "",
+  wecomAutoSync: false,
   rawText: "",
   otherText: "",
   templateVersion: "",
@@ -138,6 +140,7 @@ let state = {
   ocrIssues: [],
   wecomSyncBusy: false,
 };
+let wecomAutoTimer = null;
 
 function init() {
   try {
@@ -178,6 +181,13 @@ function bindElements() {
 
   byId("syncWecomBtn").addEventListener("click", () => {
     syncWecomOrders();
+  });
+
+  byId("wecomAutoSync").addEventListener("change", (event) => {
+    state.wecomAutoSync = event.target.checked;
+    saveState();
+    setupWecomAutoSync();
+    showToast(state.wecomAutoSync ? "已开启自动微信同步" : "已关闭自动微信同步");
   });
 
   byId("rawText").addEventListener("input", (event) => {
@@ -403,6 +413,7 @@ function loadState() {
   state.view = localStorage.getItem(STORAGE.view) || "main";
   if (!["main", "manage"].includes(state.view)) state.view = "main";
   state.wecomBridgeUrl = localStorage.getItem(STORAGE.wecomBridgeUrl) || "";
+  state.wecomAutoSync = localStorage.getItem(STORAGE.wecomAutoSync) === "1";
   state.rawText = localStorage.getItem(STORAGE.raw) || "";
   state.templateVersion = localStorage.getItem(STORAGE.templateVersion) || "";
   state.templateCsv = localStorage.getItem(STORAGE.templateCsv) || "";
@@ -446,6 +457,7 @@ function saveState() {
   localStorage.setItem(STORAGE.lastActiveDay, todayISO());
   localStorage.setItem(STORAGE.view, state.view || "main");
   localStorage.setItem(STORAGE.wecomBridgeUrl, state.wecomBridgeUrl || "");
+  localStorage.setItem(STORAGE.wecomAutoSync, state.wecomAutoSync ? "1" : "0");
   localStorage.setItem(STORAGE.raw, state.rawText);
   localStorage.setItem(STORAGE.templateVersion, state.templateVersion || "");
   localStorage.setItem(STORAGE.templateCsv, state.templateCsv || "");
@@ -500,16 +512,20 @@ function renderAll() {
   renderSummary();
   renderCompare();
   renderWecomSyncState();
+  setupWecomAutoSync();
 }
 
 function renderWecomSyncState() {
   const input = byId("wecomBridgeUrl");
   const button = byId("syncWecomBtn");
-  if (!input || !button) return;
+  const autoCheck = byId("wecomAutoSync");
+  if (!input || !button || !autoCheck) return;
 
   input.disabled = state.wecomSyncBusy;
   button.disabled = state.wecomSyncBusy;
   button.textContent = state.wecomSyncBusy ? "同步中..." : "微信同步入汇总";
+  autoCheck.checked = Boolean(state.wecomAutoSync);
+  autoCheck.disabled = state.wecomSyncBusy;
 }
 
 function normalizeBridgePullUrl(rawUrl) {
@@ -538,12 +554,29 @@ function normalizeBridgePullUrl(rawUrl) {
   return url.toString();
 }
 
-async function syncWecomOrders() {
+function setupWecomAutoSync() {
+  if (wecomAutoTimer) {
+    clearInterval(wecomAutoTimer);
+    wecomAutoTimer = null;
+  }
+  if (!state.wecomAutoSync) return;
+
+  wecomAutoTimer = setInterval(() => {
+    if (state.wecomSyncBusy) return;
+    const pullUrl = normalizeBridgePullUrl(state.wecomBridgeUrl);
+    if (!pullUrl) return;
+    syncWecomOrders({ silentEmpty: true, silentError: true });
+  }, 8000);
+}
+
+async function syncWecomOrders(options = {}) {
+  const silentEmpty = Boolean(options.silentEmpty);
+  const silentError = Boolean(options.silentError);
   if (state.wecomSyncBusy) return;
 
   const pullUrl = normalizeBridgePullUrl(state.wecomBridgeUrl);
   if (!pullUrl) {
-    showToast("请先填写企业微信桥接地址");
+    if (!silentError) showToast("请先填写企业微信桥接地址");
     return;
   }
 
@@ -556,7 +589,7 @@ async function syncWecomOrders() {
     const payload = await response.json();
     const items = Array.isArray(payload?.items) ? payload.items : [];
     if (!items.length) {
-      showToast("企业微信暂无新订单");
+      if (!silentEmpty) showToast("企业微信暂无新订单");
       return;
     }
 
@@ -570,7 +603,7 @@ async function syncWecomOrders() {
       .filter(Boolean);
 
     if (!lines.length) {
-      showToast("企业微信暂无可识别文本");
+      if (!silentEmpty) showToast("企业微信暂无可识别文本");
       return;
     }
 
@@ -581,7 +614,7 @@ async function syncWecomOrders() {
     if (!entries.length) {
       saveState();
       renderAll();
-      showToast("已同步，但未识别到货物数量");
+      if (!silentEmpty) showToast("已同步，但未识别到货物数量");
       return;
     }
 
@@ -589,7 +622,7 @@ async function syncWecomOrders() {
     if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
       saveState();
       renderAll();
-      showToast("已同步到输入区，已取消入账");
+      if (!silentEmpty) showToast("已同步到输入区，已取消入账");
       return;
     }
 
@@ -599,7 +632,7 @@ async function syncWecomOrders() {
     showToast(`微信同步 ${lines.length} 条，入账 ${added} 条`);
   } catch (error) {
     console.error(error);
-    showToast("微信同步失败，请检查桥接地址和服务状态");
+    if (!silentError) showToast("微信同步失败，请检查桥接地址和服务状态");
   } finally {
     state.wecomSyncBusy = false;
     renderWecomSyncState();
