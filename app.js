@@ -187,12 +187,25 @@ function bindElements() {
 
   byId("clearBtn").addEventListener("click", () => {
     state.rawText = "";
-    state.entries = [];
+    state.otherText = "";
     state.ocrText = "";
     state.ocrIssues = [];
+    state.ocrImages = [];
     saveState();
     renderAll();
-    showToast("已清空");
+    showToast("已清空输入区，今日记录保留");
+  });
+
+  byId("clearDayBtn").addEventListener("click", () => {
+    const ok = typeof window !== "undefined" && typeof window.confirm === "function"
+      ? window.confirm("确定清空今日所有记录吗？此操作不可恢复。")
+      : true;
+    if (!ok) return;
+    state.entries = [];
+    state.otherEntries = [];
+    saveState();
+    renderAll();
+    showToast("今日记录已清空");
   });
 
   byId("parseBtn").addEventListener("click", () => {
