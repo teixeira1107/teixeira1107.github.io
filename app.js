@@ -196,6 +196,18 @@ function bindElements() {
     saveState();
   });
 
+  byId("rawText").addEventListener("paste", (event) => {
+    const pastedText = event.clipboardData?.getData("text") || "";
+    if (!String(pastedText).trim()) return;
+    event.preventDefault();
+    importIncomingText(pastedText, {
+      appendToRaw: true,
+      emptyToast: "请先复制微信聊天内容",
+      noEntryToast: "已粘贴，但未识别到货物数量",
+      successToast: (added) => `已粘贴并入账 ${added} 条，今日累计 ${state.entries.length} 条`,
+    });
+  });
+
   byId("otherText").addEventListener("input", (event) => {
     state.otherText = event.target.value;
     saveState();
@@ -232,6 +244,8 @@ function bindElements() {
   });
 
   byId("parseBtn").addEventListener("click", () => {
+    parseCurrentRawText();
+    return;
     const entries = parseMessages(state.rawText, state.rules);
     if (!entries.length) {
       showToast("没有识别到货物数量");
@@ -249,6 +263,13 @@ function bindElements() {
     renderAll();
     showToast(`新增 ${added} 条，今日累计 ${state.entries.length} 条`);
   });
+
+  const pasteParseBtn = byId("pasteParseBtn");
+  if (pasteParseBtn) {
+    pasteParseBtn.addEventListener("click", () => {
+      pasteAndImportFromClipboard();
+    });
+  }
 
   byId("addRowBtn").addEventListener("click", () => {
     state.entries.push(createEmptyEntry());
@@ -637,6 +658,78 @@ async function syncWecomOrders(options = {}) {
   } finally {
     state.wecomSyncBusy = false;
     renderWecomSyncState();
+  }
+}
+
+function importIncomingText(incomingText, options = {}) {
+  const text = String(incomingText || "").trim();
+  if (!text) {
+    if (!options.silentEmpty) showToast(options.emptyToast || "请先粘贴聊天记录");
+    return { added: 0, parsed: 0, cancelled: false };
+  }
+
+  if (options.appendToRaw) {
+    state.rawText = [state.rawText.trim(), text].filter(Boolean).join("\n");
+  }
+
+  const entries = parseMessages(text, state.rules);
+  if (!entries.length) {
+    saveState();
+    renderAll();
+    if (!options.silentNoEntry) showToast(options.noEntryToast || "没有识别到货物数量");
+    return { added: 0, parsed: 0, cancelled: false };
+  }
+
+  const duplicateHint = detectDuplicateImport(entries);
+  if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
+    saveState();
+    renderAll();
+    if (!options.silentCancel) showToast(options.cancelToast || "已取消录入");
+    return { added: 0, parsed: entries.length, cancelled: true };
+  }
+
+  const added = appendDailyEntries(entries);
+  saveState();
+  renderAll();
+  if (!options.silentSuccess) {
+    if (typeof options.successToast === "function") showToast(options.successToast(added, entries.length));
+    else showToast(`新增 ${added} 条，今日累计 ${state.entries.length} 条`);
+  }
+
+  return { added, parsed: entries.length, cancelled: false };
+}
+
+function parseCurrentRawText() {
+  return importIncomingText(state.rawText, {
+    appendToRaw: false,
+    emptyToast: "请先粘贴聊天记录",
+    noEntryToast: "没有识别到货物数量",
+    successToast: (added) => `新增 ${added} 条，今日累计 ${state.entries.length} 条`,
+  });
+}
+
+async function pasteAndImportFromClipboard() {
+  if (typeof navigator === "undefined" || !navigator.clipboard || typeof navigator.clipboard.readText !== "function") {
+    showToast("当前环境不支持读取剪贴板，请手动粘贴后点识别消息");
+    return;
+  }
+
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!String(text || "").trim()) {
+      showToast("剪贴板没有可用内容");
+      return;
+    }
+
+    importIncomingText(text, {
+      appendToRaw: true,
+      emptyToast: "请先复制微信聊天内容",
+      noEntryToast: "已粘贴，但未识别到货物数量",
+      successToast: (added) => `已粘贴并入账 ${added} 条，今日累计 ${state.entries.length} 条`,
+    });
+  } catch (error) {
+    console.error(error);
+    showToast("读取剪贴板失败，请手动粘贴后点识别消息");
   }
 }
 
