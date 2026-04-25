@@ -117,6 +117,7 @@ let builtinTemplateRowsCache = null;
 let state = {
   workDate: "",
   view: "main",
+  dayAutoReset: false,
   rawText: "",
   otherText: "",
   templateVersion: "",
@@ -139,6 +140,9 @@ function init() {
     bindElements();
     loadState();
     renderAll();
+    if (state.dayAutoReset) {
+      showToast("已切换到新日期，今日数据已自动清空并重新累计");
+    }
   } catch (error) {
     console.error("初始化失败，已重置本地缓存", error);
     Object.values(STORAGE).forEach((key) => localStorage.removeItem(key));
@@ -192,10 +196,10 @@ function bindElements() {
 
   byId("parseBtn").addEventListener("click", () => {
     const entries = parseMessages(state.rawText, state.rules);
-    state.entries = entries;
+    const added = appendDailyEntries(entries);
     saveState();
     renderAll();
-    showToast(entries.length ? `识别出 ${entries.length} 条明细` : "没有识别到货物数量");
+    showToast(added ? `新增 ${added} 条，今日累计 ${state.entries.length} 条` : "没有新增明细（可能已在今日累计中）");
   });
 
   byId("addRowBtn").addEventListener("click", () => {
@@ -355,7 +359,9 @@ function bindElements() {
 }
 
 function loadState() {
-  state.workDate = localStorage.getItem(STORAGE.date) || todayISO();
+  const today = todayISO();
+  const savedDate = localStorage.getItem(STORAGE.date) || "";
+  state.workDate = savedDate || today;
   state.view = localStorage.getItem(STORAGE.view) || "main";
   if (!["main", "manage"].includes(state.view)) state.view = "main";
   state.rawText = localStorage.getItem(STORAGE.raw) || "";
@@ -368,6 +374,11 @@ function loadState() {
   state.otherText = localStorage.getItem(STORAGE.otherText) || "";
   state.entries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.entries), []));
   state.otherEntries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.otherEntries), []));
+  state.dayAutoReset = false;
+  if (savedDate && savedDate !== today) {
+    resetDailyWorkingData(today);
+    state.dayAutoReset = true;
+  }
   state.rules = normalizeRules(safeParse(localStorage.getItem(STORAGE.rules), []));
   state.specs = normalizeSpecs(safeParse(localStorage.getItem(STORAGE.specs), []));
   const template = getActiveTemplateContext();
@@ -377,6 +388,17 @@ function loadState() {
     restandardizeEntries();
     saveState();
   }
+  state.ocrIssues = [];
+}
+
+function resetDailyWorkingData(nextDate) {
+  state.workDate = nextDate || todayISO();
+  state.rawText = "";
+  state.otherText = "";
+  state.entries = [];
+  state.otherEntries = [];
+  state.ocrImages = [];
+  state.ocrText = "";
   state.ocrIssues = [];
 }
 
@@ -696,8 +718,9 @@ function extractItems(chunk, sourceLine, meta, rules) {
   const beforeRegex = new RegExp(`(${NUMBER_PATTERN})\\s*(${UNIT_PATTERN})\\s*(${PRODUCT_PATTERN})`, "g");
 
   collectMatches(afterRegex, chunk, usedRanges).forEach((match) => {
-    const originalName = cleanupName(match[1]);
-    const quantity = parseNumber(match[2]);
+    const resolved = resolveAfterPatternNameQuantity(match[1], match[2], match[3], rules);
+    const originalName = resolved.originalName;
+    const quantity = resolved.quantity;
     const unit = normalizeUnit(match[3]);
     if (isValidItem(originalName, quantity, unit)) {
       entries.push(makeEntry(sourceLine, meta, originalName, quantity, unit));
@@ -721,6 +744,71 @@ function extractItems(chunk, sourceLine, meta, rules) {
     ...entry,
     standardName: standardizeName(entry.originalName, rules),
   }));
+}
+
+function resolveAfterPatternNameQuantity(rawName, rawQuantity, rawUnit, rules) {
+  const originalName = cleanupName(rawName);
+  const quantityText = String(rawQuantity || "").trim();
+  const quantity = parseNumber(quantityText);
+  const unit = normalizeUnit(rawUnit || "");
+  const best = chooseAmbiguousQuantitySplit(originalName, quantityText, unit, rules);
+  if (best) return best;
+  return { originalName, quantity };
+}
+
+function chooseAmbiguousQuantitySplit(name, quantityText, unit, rules) {
+  if (!name || !quantityText || !unit) return null;
+  if (!/^[零一二两三四五六七八九]{2,}$/.test(quantityText)) return null;
+
+  const pieceLikeUnits = new Set(["件", "箱", "包", "袋", "板", "个", "只", "条", "支", "台", "套", "提", "捆", "打", "颗", "片"]);
+  if (!pieceLikeUnits.has(unit)) return null;
+
+  const baseScore = getRuleMatchScore(name, rules);
+  const candidates = [];
+  for (let splitIndex = 1; splitIndex < quantityText.length; splitIndex += 1) {
+    const nameSuffix = quantityText.slice(0, splitIndex);
+    const qtyPart = quantityText.slice(splitIndex);
+    const candidateName = cleanupName(`${name}${nameSuffix}`);
+    const candidateQty = parseNumber(qtyPart);
+    if (!isValidItem(candidateName, candidateQty, unit)) continue;
+
+    const matchScore = getRuleMatchScore(candidateName, rules);
+    candidates.push({
+      originalName: candidateName,
+      quantity: candidateQty,
+      score: matchScore,
+      qtyLen: qtyPart.length,
+    });
+  }
+
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) => b.score - a.score || a.qtyLen - b.qtyLen || a.quantity - b.quantity);
+  const best = candidates[0];
+  if (best.score > baseScore) return { originalName: best.originalName, quantity: best.quantity };
+
+  const fallbackAllowed = /(?:膘|级|号|排|骨|肉|腿|肘|肋|花|块|条)$/.test(name);
+  if (fallbackAllowed) return { originalName: best.originalName, quantity: best.quantity };
+  return null;
+}
+
+function getRuleMatchScore(name, rules) {
+  const target = normalizeText(name);
+  if (!target) return 0;
+
+  let best = 0;
+  rules.forEach((rule) => {
+    [rule.standard, ...(rule.aliases || [])].forEach((alias) => {
+      const key = normalizeText(alias);
+      if (!key) return;
+      if (target === key) {
+        best = Math.max(best, key.length + 100);
+      } else if (target.includes(key) || key.includes(target)) {
+        best = Math.max(best, Math.min(target.length, key.length));
+      }
+    });
+  });
+  return best;
 }
 
 function extractKnownUnitlessItems(chunk, sourceLine, meta, rules) {
@@ -785,6 +873,31 @@ function createEmptyEntry() {
     unit: "",
     note: "",
   };
+}
+
+function entrySignature(entry) {
+  return [
+    normalizeText(entry.sender),
+    normalizeText(entry.time),
+    normalizeText(entry.source),
+    normalizeText(entry.originalName),
+    roundNumber(entry.quantity),
+    normalizeText(normalizeUnit(entry.unit)),
+  ].join("|");
+}
+
+function appendDailyEntries(newEntries) {
+  if (!Array.isArray(newEntries) || !newEntries.length) return 0;
+  const seen = new Set(state.entries.map((item) => entrySignature(item)));
+  let added = 0;
+  newEntries.forEach((entry) => {
+    const sign = entrySignature(entry);
+    if (!sign || seen.has(sign)) return;
+    seen.add(sign);
+    state.entries.push(entry);
+    added += 1;
+  });
+  return added;
 }
 
 function cleanupName(name) {
