@@ -197,10 +197,21 @@ function bindElements() {
 
   byId("parseBtn").addEventListener("click", () => {
     const entries = parseMessages(state.rawText, state.rules);
+    if (!entries.length) {
+      showToast("没有识别到货物数量");
+      return;
+    }
+
+    const duplicateHint = detectDuplicateImport(entries);
+    if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
+      showToast("已取消录入");
+      return;
+    }
+
     const added = appendDailyEntries(entries);
     saveState();
     renderAll();
-    showToast(added ? `新增 ${added} 条，今日累计 ${state.entries.length} 条` : "没有新增明细（可能已在今日累计中）");
+    showToast(`新增 ${added} 条，今日累计 ${state.entries.length} 条`);
   });
 
   byId("addRowBtn").addEventListener("click", () => {
@@ -882,6 +893,55 @@ function appendDailyEntries(newEntries) {
   if (!Array.isArray(newEntries) || !newEntries.length) return 0;
   newEntries.forEach((entry) => state.entries.push(entry));
   return newEntries.length;
+}
+
+function duplicateImportKey(entry) {
+  return [
+    normalizeText(entry.sender),
+    normalizeText(entry.standardName || entry.originalName),
+    roundNumber(entry.quantity),
+    normalizeText(normalizeUnit(entry.unit)),
+  ].join("|");
+}
+
+function detectDuplicateImport(newEntries) {
+  if (!Array.isArray(newEntries) || !newEntries.length || !state.entries.length) return null;
+
+  const nextKeys = newEntries.map((entry) => duplicateImportKey(entry));
+  const lastKey = duplicateImportKey(state.entries[state.entries.length - 1]);
+
+  if (nextKeys.length === 1 && nextKeys[0] === lastKey) {
+    return { type: "single", count: 1 };
+  }
+
+  if (state.entries.length >= nextKeys.length) {
+    const tailKeys = state.entries.slice(-nextKeys.length).map((entry) => duplicateImportKey(entry));
+    if (JSON.stringify(nextKeys) === JSON.stringify(tailKeys)) {
+      return { type: "batch", count: nextKeys.length };
+    }
+  }
+
+  const recentSet = new Set(state.entries.slice(-50).map((entry) => duplicateImportKey(entry)));
+  const overlapCount = nextKeys.filter((key) => recentSet.has(key)).length;
+  if (overlapCount > 0) {
+    return { type: "partial", count: overlapCount };
+  }
+
+  return null;
+}
+
+function confirmDuplicateImport(hint) {
+  const type = hint?.type || "partial";
+  const count = Number(hint?.count) || 1;
+  let message = "检测到重复信息，是否继续录入？";
+  if (type === "single") message = "本次与上一条相同，是否继续录入？";
+  if (type === "batch") message = `本次与上一批（${count} 条）相同，是否继续录入？`;
+  if (type === "partial") message = `本次有 ${count} 条与近期记录相同，是否继续录入？`;
+
+  if (typeof window !== "undefined" && typeof window.confirm === "function") {
+    return window.confirm(message);
+  }
+  return true;
 }
 
 function cleanupName(name) {
