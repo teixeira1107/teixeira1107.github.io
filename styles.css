@@ -203,6 +203,18 @@ textarea:focus {
   padding: 0 16px 16px;
 }
 
+.wecom-sync {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+.wecom-sync input {
+  height: 38px;
+  padding: 0 10px;
+}
+
 .summary-panel {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -657,6 +669,10 @@ td input {
   }
 
   .spec-form {
+    grid-template-columns: 1fr;
+  }
+
+  .wecom-sync {
     grid-template-columns: 1fr;
   }
 }
