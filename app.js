@@ -17,7 +17,7 @@ const STORAGE = {
   entries: "cargo-ledger-entries",
   rules: "cargo-ledger-rules",
 };
-const DEFAULT_WECOM_BRIDGE_URL = "https://sloc-cn.workers.dev";
+const DEFAULT_WECOM_BRIDGE_URL = "https://wecom-order-bridge.sloc-cn.workers.dev";
 
 const DEFAULT_RULES = [
   { standard: "矿泉水", aliases: ["水", "饮用水", "农夫山泉", "怡宝"] },
