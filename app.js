@@ -1,5 +1,6 @@
 const STORAGE = {
   date: "cargo-ledger-date",
+  lastActiveDay: "cargo-ledger-last-active-day",
   view: "cargo-ledger-view",
   raw: "cargo-ledger-raw",
   ocrProvider: "cargo-ledger-ocr-provider",
@@ -361,6 +362,7 @@ function bindElements() {
 function loadState() {
   const today = todayISO();
   const savedDate = localStorage.getItem(STORAGE.date) || "";
+  const lastActiveDay = localStorage.getItem(STORAGE.lastActiveDay) || today;
   state.workDate = savedDate || today;
   state.view = localStorage.getItem(STORAGE.view) || "main";
   if (!["main", "manage"].includes(state.view)) state.view = "main";
@@ -375,7 +377,7 @@ function loadState() {
   state.entries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.entries), []));
   state.otherEntries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.otherEntries), []));
   state.dayAutoReset = false;
-  if (savedDate && savedDate !== today) {
+  if (lastActiveDay !== today) {
     resetDailyWorkingData(today);
     state.dayAutoReset = true;
   }
@@ -384,7 +386,7 @@ function loadState() {
   const template = getActiveTemplateContext();
   const strictResult = applyTemplateRowsStrict(template.rows, { templateVersion: template.version });
   const sanitizeResult = sanitizeMasterData();
-  if (strictResult.changed || sanitizeResult.changed) {
+  if (strictResult.changed || sanitizeResult.changed || state.dayAutoReset) {
     restandardizeEntries();
     saveState();
   }
@@ -404,6 +406,7 @@ function resetDailyWorkingData(nextDate) {
 
 function saveState() {
   localStorage.setItem(STORAGE.date, state.workDate);
+  localStorage.setItem(STORAGE.lastActiveDay, todayISO());
   localStorage.setItem(STORAGE.view, state.view || "main");
   localStorage.setItem(STORAGE.raw, state.rawText);
   localStorage.setItem(STORAGE.templateVersion, state.templateVersion || "");
@@ -875,29 +878,10 @@ function createEmptyEntry() {
   };
 }
 
-function entrySignature(entry) {
-  return [
-    normalizeText(entry.sender),
-    normalizeText(entry.time),
-    normalizeText(entry.source),
-    normalizeText(entry.originalName),
-    roundNumber(entry.quantity),
-    normalizeText(normalizeUnit(entry.unit)),
-  ].join("|");
-}
-
 function appendDailyEntries(newEntries) {
   if (!Array.isArray(newEntries) || !newEntries.length) return 0;
-  const seen = new Set(state.entries.map((item) => entrySignature(item)));
-  let added = 0;
-  newEntries.forEach((entry) => {
-    const sign = entrySignature(entry);
-    if (!sign || seen.has(sign)) return;
-    seen.add(sign);
-    state.entries.push(entry);
-    added += 1;
-  });
-  return added;
+  newEntries.forEach((entry) => state.entries.push(entry));
+  return newEntries.length;
 }
 
 function cleanupName(name) {
