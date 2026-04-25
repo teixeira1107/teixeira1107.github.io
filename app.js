@@ -17,6 +17,7 @@ const STORAGE = {
   entries: "cargo-ledger-entries",
   rules: "cargo-ledger-rules",
 };
+const DEFAULT_WECOM_BRIDGE_URL = "https://sloc-cn.workers.dev";
 
 const DEFAULT_RULES = [
   { standard: "矿泉水", aliases: ["水", "饮用水", "农夫山泉", "怡宝"] },
@@ -121,7 +122,7 @@ let state = {
   workDate: "",
   view: "main",
   dayAutoReset: false,
-  wecomBridgeUrl: "",
+  wecomBridgeUrl: DEFAULT_WECOM_BRIDGE_URL,
   wecomAutoSync: false,
   rawText: "",
   otherText: "",
@@ -412,7 +413,7 @@ function loadState() {
   state.workDate = savedDate || today;
   state.view = localStorage.getItem(STORAGE.view) || "main";
   if (!["main", "manage"].includes(state.view)) state.view = "main";
-  state.wecomBridgeUrl = localStorage.getItem(STORAGE.wecomBridgeUrl) || "";
+  state.wecomBridgeUrl = localStorage.getItem(STORAGE.wecomBridgeUrl) || DEFAULT_WECOM_BRIDGE_URL;
   state.wecomAutoSync = localStorage.getItem(STORAGE.wecomAutoSync) === "1";
   state.rawText = localStorage.getItem(STORAGE.raw) || "";
   state.templateVersion = localStorage.getItem(STORAGE.templateVersion) || "";
