@@ -1,5 +1,6 @@
 const STORAGE = {
   date: "cargo-ledger-date",
+  view: "cargo-ledger-view",
   raw: "cargo-ledger-raw",
   ocrProvider: "cargo-ledger-ocr-provider",
   ocrApiKey: "cargo-ledger-ocr-apikey",
@@ -115,6 +116,7 @@ let builtinTemplateRowsCache = null;
 
 let state = {
   workDate: "",
+  view: "main",
   rawText: "",
   otherText: "",
   templateVersion: "",
@@ -147,6 +149,14 @@ function init() {
 }
 
 function bindElements() {
+  byId("viewMainBtn").addEventListener("click", () => {
+    setView("main");
+  });
+
+  byId("viewManageBtn").addEventListener("click", () => {
+    setView("manage");
+  });
+
   byId("workDate").addEventListener("change", (event) => {
     state.workDate = event.target.value;
     saveState();
@@ -346,6 +356,8 @@ function bindElements() {
 
 function loadState() {
   state.workDate = localStorage.getItem(STORAGE.date) || todayISO();
+  state.view = localStorage.getItem(STORAGE.view) || "main";
+  if (!["main", "manage"].includes(state.view)) state.view = "main";
   state.rawText = localStorage.getItem(STORAGE.raw) || "";
   state.templateVersion = localStorage.getItem(STORAGE.templateVersion) || "";
   state.templateCsv = localStorage.getItem(STORAGE.templateCsv) || "";
@@ -370,6 +382,7 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE.date, state.workDate);
+  localStorage.setItem(STORAGE.view, state.view || "main");
   localStorage.setItem(STORAGE.raw, state.rawText);
   localStorage.setItem(STORAGE.templateVersion, state.templateVersion || "");
   localStorage.setItem(STORAGE.templateCsv, state.templateCsv || "");
@@ -384,7 +397,28 @@ function saveState() {
   localStorage.setItem(STORAGE.specs, JSON.stringify(state.specs));
 }
 
+function setView(nextView) {
+  const view = nextView === "manage" ? "manage" : "main";
+  if (state.view === view) return;
+  state.view = view;
+  saveState();
+  renderView();
+}
+
+function renderView() {
+  const isManage = state.view === "manage";
+  document.querySelectorAll("[data-view]").forEach((node) => {
+    const mode = node.getAttribute("data-view");
+    const shouldShow = mode === (isManage ? "manage" : "main");
+    node.classList.toggle("is-hidden", !shouldShow);
+  });
+
+  byId("viewMainBtn").classList.toggle("active", !isManage);
+  byId("viewManageBtn").classList.toggle("active", isManage);
+}
+
 function renderAll() {
+  renderView();
   byId("workDate").value = state.workDate;
   byId("rawText").value = state.rawText;
   byId("otherText").value = state.otherText;

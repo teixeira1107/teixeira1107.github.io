@@ -120,11 +120,32 @@ textarea:focus {
   color: var(--text);
 }
 
+.view-nav {
+  display: flex;
+  gap: 10px;
+  padding: 12px 32px 0;
+}
+
+.view-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.view-btn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(360px, 1.1fr) minmax(320px, 0.9fr);
   gap: 18px;
   padding: 18px 32px 32px;
+}
+
+[data-view].is-hidden {
+  display: none !important;
 }
 
 .panel {
@@ -620,6 +641,10 @@ td input {
     padding: 14px 14px 24px;
   }
 
+  .view-nav {
+    padding: 10px 14px 0;
+  }
+
   .import-panel,
   .image-panel,
   .summary-panel {
@@ -644,6 +669,14 @@ td input {
   .panel-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .view-nav {
+    gap: 8px;
+  }
+
+  .view-btn {
+    flex: 1;
   }
 
   .button-row,

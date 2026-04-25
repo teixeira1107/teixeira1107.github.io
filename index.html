@@ -18,8 +18,13 @@
       </label>
     </header>
 
+    <nav class="view-nav" aria-label="页面导航">
+      <button id="viewMainBtn" class="view-btn active" type="button">主页面</button>
+      <button id="viewManageBtn" class="view-btn" type="button">二级菜单（管理）</button>
+    </nav>
+
     <main class="layout">
-      <section class="panel import-panel">
+      <section class="panel import-panel" data-view="main">
         <div class="panel-head">
           <h2>消息导入</h2>
           <div class="button-row">
@@ -38,7 +43,7 @@
         </div>
       </section>
 
-      <section class="panel image-panel">
+      <section class="panel image-panel" data-view="main">
         <div class="panel-head">
           <h2>截图识别</h2>
           <span id="ocrStatus" class="status-text">未选择图片</span>
@@ -84,7 +89,7 @@
         </div>
       </section>
 
-      <section class="panel summary-panel">
+      <section class="panel summary-panel" data-view="main">
         <div class="panel-head">
           <h2>今日汇总</h2>
           <div class="button-row">
@@ -122,7 +127,7 @@
         </div>
       </section>
 
-      <section class="panel details-panel">
+      <section class="panel details-panel" data-view="manage">
         <div class="panel-head">
           <h2>识别明细</h2>
           <div class="button-row">
@@ -148,7 +153,7 @@
         </div>
       </section>
 
-      <section class="panel compare-panel">
+      <section class="panel compare-panel" data-view="manage">
         <div class="panel-head">
           <h2>对方汇总核对</h2>
           <div class="button-row">
@@ -185,7 +190,7 @@
         </div>
       </section>
 
-      <section class="panel alias-panel">
+      <section class="panel alias-panel" data-view="manage">
         <div class="panel-head">
           <h2>货物别名</h2>
           <div class="button-row">
@@ -225,7 +230,7 @@
         </div>
       </section>
 
-      <section class="panel spec-panel">
+      <section class="panel spec-panel" data-view="manage">
         <div class="panel-head">
           <h2>标准重量</h2>
         </div>
