@@ -1,778 +1,266 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Cranberries 小红莓乐队 | 爱尔兰摇滚传奇</title>
-    <meta name="description" content="The Cranberries小红莓乐队官方网站介绍，爱尔兰摇滚传奇，代表作品Zombie、Dreams、Linger等">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #fff;
-            min-height: 100vh;
-        }
-
-        /* 导航栏 */
-        nav {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px 50px;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-        }
-
-        nav a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 16px;
-            transition: color 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        nav a:hover {
-            color: #e94560;
-        }
-
-        /* 首屏 */
-        .hero {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1920') center/cover;
-            position: relative;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero h1 {
-            font-size: 80px;
-            font-weight: 900;
-            letter-spacing: 10px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
-        }
-
-        .hero h1 span {
-            color: #e94560;
-        }
-
-        .hero p {
-            font-size: 24px;
-            opacity: 0.8;
-            letter-spacing: 5px;
-        }
-
-        .hero .tagline {
-            margin-top: 30px;
-            font-size: 18px;
-            opacity: 0.6;
-        }
-
-        /* 音乐播放器 */
-        .music-player {
-            margin-top: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px 50px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .music-player h3 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #e94560;
-        }
-
-        .music-player audio {
-            width: 400px;
-            max-width: 100%;
-            border-radius: 10px;
-        }
-
-        /* 统计数据 */
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 60px;
-            margin-top: 50px;
-            flex-wrap: wrap;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-item .number {
-            font-size: 48px;
-            font-weight: 900;
-            color: #e94560;
-        }
-
-        .stat-item .label {
-            font-size: 14px;
-            opacity: 0.6;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* 简介部分 */
-        .section {
-            padding: 100px 50px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .section-title {
-            font-size: 48px;
-            text-align: center;
-            margin-bottom: 60px;
-            position: relative;
-        }
-
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 100px;
-            height: 4px;
-            background: #e94560;
-            margin: 20px auto 0;
-        }
-
-        .about-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 50px;
-            align-items: center;
-        }
-
-        .about-text p {
-            font-size: 18px;
-            line-height: 1.8;
-            margin-bottom: 20px;
-            opacity: 0.9;
-        }
-
-        .about-image img {
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        /* 时间线 */
-        .timeline {
-            position: relative;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 100%;
-            background: #e94560;
-            opacity: 0.3;
-        }
-
-        .timeline-item {
-            display: flex;
-            justify-content: flex-end;
-            padding-right: 50%;
-            margin-bottom: 50px;
-            position: relative;
-        }
-
-        .timeline-item:nth-child(even) {
-            justify-content: flex-start;
-            padding-right: 0;
-            padding-left: 50%;
-        }
-
-        .timeline-content {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 25px;
-            border-radius: 15px;
-            max-width: 350px;
-            margin: 0 30px;
-        }
-
-        .timeline-content .year {
-            color: #e94560;
-            font-weight: 900;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .timeline-content h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        .timeline-content p {
-            font-size: 14px;
-            opacity: 0.7;
-            line-height: 1.6;
-        }
-
-        /* 成员部分 */
-        .members-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
-        .member-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .member-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(233, 69, 96, 0.3);
-        }
-
-        .member-card img {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-        }
-
-        .member-info {
-            padding: 25px;
-            text-align: center;
-        }
-
-        .member-info h3 {
-            font-size: 22px;
-            margin-bottom: 10px;
-            color: #e94560;
-        }
-
-        .member-info p {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-
-        /* 专辑部分 */
-        .albums-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
-
-        .album-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-
-        .album-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 15px 30px rgba(233, 69, 96, 0.3);
-        }
-
-        .album-cover {
-            height: 250px;
-            background: linear-gradient(135deg, #e94560, #16213e);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 60px;
-        }
-
-        .album-info {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .album-info h3 {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-
-        .album-info .year {
-            color: #e94560;
-            font-size: 14px;
-        }
-
-        /* 歌曲部分 */
-        .songs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .song-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 30px;
-            transition: all 0.3s;
-            border-left: 4px solid #e94560;
-        }
-
-        .song-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(10px);
-        }
-
-        .song-card h3 {
-            font-size: 22px;
-            margin-bottom: 15px;
-            color: #e94560;
-        }
-
-        .song-card .year {
-            font-size: 14px;
-            opacity: 0.6;
-            margin-bottom: 15px;
-        }
-
-        .song-card p {
-            font-size: 15px;
-            line-height: 1.6;
-            opacity: 0.8;
-        }
-
-        /* 名言 */
-        .quote-section {
-            background: rgba(233, 69, 96, 0.1);
-            padding: 80px 50px;
-            text-align: center;
-        }
-
-        .quote {
-            font-size: 32px;
-            font-style: italic;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        .quote-author {
-            margin-top: 30px;
-            font-size: 18px;
-            opacity: 0.6;
-        }
-
-        /* 页脚 */
-        footer {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 50px;
-            text-align: center;
-        }
-
-        footer p {
-            opacity: 0.6;
-            font-size: 14px;
-        }
-
-        footer .love {
-            color: #e94560;
-        }
-
-        .social-links {
-            margin-bottom: 30px;
-        }
-
-        .social-links a {
-            color: #fff;
-            font-size: 24px;
-            margin: 0 15px;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-        }
-
-        .social-links a:hover {
-            opacity: 1;
-        }
-
-        /* 响应式 */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 40px;
-            }
-
-            .about-content {
-                grid-template-columns: 1fr;
-            }
-
-            nav ul {
-                flex-wrap: wrap;
-                gap: 20px;
-            }
-
-            .section {
-                padding: 60px 20px;
-            }
-
-            .timeline::before {
-                left: 0;
-            }
-
-            .timeline-item,
-            .timeline-item:nth-child(even) {
-                padding-left: 30px;
-                padding-right: 0;
-                justify-content: flex-start;
-            }
-
-            .timeline-content {
-                margin: 0;
-            }
-        }
-
-        /* 滚动动画 */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s, transform 0.6s;
-        }
-
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    </style>
-</head>
-<body>
-    <!-- 导航栏 -->
-    <nav>
-        <ul>
-            <li><a href="#home">首页</a></li>
-            <li><a href="#about">关于</a></li>
-            <li><a href="#timeline">历程</a></li>
-            <li><a href="#members">成员</a></li>
-            <li><a href="#albums">专辑</a></li>
-            <li><a href="#songs">金曲</a></li>
-        </ul>
-    </nav>
-
-    <!-- 首屏 -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>THE <span>CRANBERRIES</span></h1>
-            <p>小红莓乐队</p>
-            <p class="tagline">爱尔兰摇滚传奇 · 1990-2019 · 永远的Dolores</p>
-            
-            <div class="music-player">
-                <h3>🎵 今日推荐：Dreams</h3>
-                <audio controls>
-                    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-                    您的浏览器不支持音频播放
-                </audio>
-                <p style="margin-top:15px;font-size:12px;opacity:0.5;">* 示例音乐，可用小红莓实际歌曲替换</p>
-            </div>
-
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="number">6</div>
-                    <div class="label">录音室专辑</div>
-                </div>
-                <div class="stat-item">
-                    <div class="number">40M+</div>
-                    <div class="label">唱片销量</div>
-                </div>
-                <div class="stat-item">
-                    <div class="number">29</div>
-                    <div class="label">年音乐生涯</div>
-                </div>
-            </div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>货物汇总台账</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>货物汇总台账</h1>
+        <p>微信群消息识别、货物别名归一、每日汇总</p>
+      </div>
+      <label class="date-field">
+        <span>日期</span>
+        <input id="workDate" type="date" />
+      </label>
+    </header>
+
+    <main class="layout">
+      <section class="panel import-panel">
+        <div class="panel-head">
+          <h2>消息导入</h2>
+          <div class="button-row">
+            <button id="sampleBtn" class="ghost" type="button">示例</button>
+            <button id="clearBtn" class="ghost danger" type="button">清空</button>
+          </div>
         </div>
-    </section>
-
-    <!-- 关于乐队 -->
-    <section class="section" id="about">
-        <h2 class="section-title fade-in">关于乐队</h2>
-        <div class="about-content">
-            <div class="about-text fade-in">
-                <p><strong>小红莓乐队（The Cranberries）</strong>成立于1990年，来自爱尔兰利默里克郡，是爱尔兰最伟大的摇滚乐队之一，与U2齐名。</p>
-                <p>乐队以主唱<strong>Dolores O'Riordan</strong>独特的咽音唱法著称，她的声线时而温柔如梦，时而高亢激昂，成为乐队的标志性声音，影响了无数后辈女歌手。</p>
-                <p>1994年，单曲《Zombie》横扫全球，成为反战歌曲的经典。乐队在全球售出超过4000万张唱片，获得无数奖项。</p>
-                <p>2018年1月15日，Dolores在伦敦突然离世，年仅46岁。2019年，乐队发行最后一张专辑《In the End》后正式解散，传奇落幕。</p>
-            </div>
-            <div class="about-image fade-in">
-                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800" alt="乐队演出">
-            </div>
+        <textarea
+          id="rawText"
+          spellcheck="false"
+          placeholder="把微信群聊天内容粘贴到这里，例如：&#10;张三：苹果20箱，农夫山泉15件&#10;李四：王老板要鸡蛋30板&#10;赵五：洋芋 50斤"
+        ></textarea>
+        <div class="actions">
+          <button id="parseBtn" class="primary" type="button">识别消息</button>
+          <button id="addRowBtn" type="button">手动加一行</button>
         </div>
-    </section>
+      </section>
 
-    <!-- 名言 -->
-    <section class="quote-section">
-        <div class="quote fade-in">
-            "Music is the only thing that makes sense in this world. When you're listening to music, you're not thinking about anything else."
+      <section class="panel image-panel">
+        <div class="panel-head">
+          <h2>截图识别</h2>
+          <span id="ocrStatus" class="status-text">未选择图片</span>
         </div>
-        <div class="quote-author">— Dolores O'Riordan</div>
-    </section>
-
-    <!-- 乐队历程 -->
-    <section class="section" id="timeline">
-        <h2 class="section-title fade-in">乐队历程</h2>
-        <div class="timeline">
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">1990</div>
-                    <h3>乐队成立</h3>
-                    <p>在爱尔兰利默里克郡成立，原名The Cranberry Saw Us，后改名The Cranberries</p>
-                </div>
-            </div>
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">1993</div>
-                    <h3>首张专辑发行</h3>
-                    <p>《Everybody Else Is Doing It, So Why Can't We?》发行，全球销量超500万张</p>
-                </div>
-            </div>
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">1994</div>
-                    <h3>《Zombie》横空出世</h3>
-                    <p>反战神曲《Zombie》发行，成为乐队最具代表性的作品，影响深远</p>
-                </div>
-            </div>
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">1999</div>
-                    <h3>暂别乐坛</h3>
-                    <p>乐队宣布无限期休整，成员各自发展个人事业</p>
-                </div>
-            </div>
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">2009</div>
-                    <h3>重组回归</h3>
-                    <p>乐队重组，开始新一轮巡演，发行新专辑《Roses》</p>
-                </div>
-            </div>
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">2018</div>
-                    <h3>Dolores离世</h3>
-                    <p>1月15日，主唱Dolores O'Riordan在伦敦突然离世，享年46岁</p>
-                </div>
-            </div>
-            <div class="timeline-item fade-in">
-                <div class="timeline-content">
-                    <div class="year">2019</div>
-                    <h3>传奇落幕</h3>
-                    <p>最后专辑《In the End》发行，乐队正式解散，永载摇滚史册</p>
-                </div>
-            </div>
+        <div id="dropZone" class="ocr-drop">
+          <input id="imageInput" type="file" accept="image/*" multiple hidden />
+          <button id="chooseImageBtn" type="button">选择截图</button>
+          <p>表格截图会优先读取汇总表的商品和数量；普通截图会只保留命中货物词库且带数量的内容。</p>
         </div>
-    </section>
-
-    <!-- 乐队成员 -->
-    <section class="section" id="members">
-        <h2 class="section-title fade-in">乐队成员</h2>
-        <div class="members-grid">
-            <div class="member-card fade-in">
-                <img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600" alt="Dolores O'Riordan">
-                <div class="member-info">
-                    <h3>Dolores O'Riordan</h3>
-                    <p>主唱 / 键盘手 / 词曲作者</p>
-                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">1971-2018 · 乐队灵魂人物</p>
-                    <p style="margin-top:10px;font-size:13px;">独特的咽音唱法，影响了Alanis Morissette等无数女歌手</p>
-                </div>
-            </div>
-            <div class="member-card fade-in">
-                <img src="https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=600" alt="Noel Hogan">
-                <div class="member-info">
-                    <h3>Noel Hogan</h3>
-                    <p>吉他手 / 和声 / 词曲作者</p>
-                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
-                    <p style="margin-top:10px;font-size:13px;">创作了乐队大部分经典曲目的吉他旋律</p>
-                </div>
-            </div>
-            <div class="member-card fade-in">
-                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600" alt="Mike Hogan">
-                <div class="member-info">
-                    <h3>Mike Hogan</h3>
-                    <p>贝斯手 / 和声</p>
-                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
-                    <p style="margin-top:10px;font-size:13px;">Noel的兄弟，负责乐队的低音部分</p>
-                </div>
-            </div>
-            <div class="member-card fade-in">
-                <img src="https://images.unsplash.com/photo-1485579149621-3123dd979885?w=600" alt="Fergal Lawler">
-                <div class="member-info">
-                    <h3>Fergal Lawler</h3>
-                    <p>鼓手</p>
-                    <p style="margin-top:10px;font-size:12px;opacity:0.5;">乐队创始人之一</p>
-                    <p style="margin-top:10px;font-size:13px;">稳健的鼓点为乐队音乐奠定基础</p>
-                </div>
-            </div>
+        <div class="ocr-settings">
+          <label>
+            <span>OCR 引擎</span>
+            <select id="ocrProvider">
+              <option value="online">在线 OCR（推荐）</option>
+              <option value="local">本地 OCR</option>
+            </select>
+          </label>
+          <label>
+            <span>在线 API Key</span>
+            <input id="ocrApiKey" type="text" placeholder="留空默认使用免费 key：helloworld" />
+          </label>
+          <label class="check-row">
+            <input id="ocrStrictMode" type="checkbox" checked />
+            <span>严格模式（有疑点就标红提醒）</span>
+          </label>
+          <label class="check-row">
+            <input id="ocrDoubleCheck" type="checkbox" checked />
+            <span>双引擎交叉校验（更慢但更稳）</span>
+          </label>
         </div>
-    </section>
-
-    <!-- 专辑 -->
-    <section class="section" id="albums">
-        <h2 class="section-title fade-in">录音室专辑</h2>
-        <div class="albums-grid">
-            <div class="album-card fade-in">
-                <div class="album-cover">🎵</div>
-                <div class="album-info">
-                    <h3>Everybody Else Is Doing It...</h3>
-                    <div class="year">1993</div>
-                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">首张专辑，一鸣惊人</p>
-                </div>
-            </div>
-            <div class="album-card fade-in">
-                <div class="album-cover">🎸</div>
-                <div class="album-info">
-                    <h3>No Need to Argue</h3>
-                    <div class="year">1994</div>
-                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">含《Zombie》，巅峰之作</p>
-                </div>
-            </div>
-            <div class="album-card fade-in">
-                <div class="album-cover">🌹</div>
-                <div class="album-info">
-                    <h3>To the Faithful Departed</h3>
-                    <div class="year">1996</div>
-                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">更成熟多元的风格</p>
-                </div>
-            </div>
-            <div class="album-card fade-in">
-                <div class="album-cover">🌙</div>
-                <div class="album-info">
-                    <h3>Bury the Hatchet</h3>
-                    <div class="year">1999</div>
-                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">休整前的最后专辑</p>
-                </div>
-            </div>
-            <div class="album-card fade-in">
-                <div class="album-cover">🌸</div>
-                <div class="album-info">
-                    <h3>Wake Up and Smell the Coffee</h3>
-                    <div class="year">2001</div>
-                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">千禧年后的力作</p>
-                </div>
-            </div>
-            <div class="album-card fade-in">
-                <div class="album-cover">💫</div>
-                <div class="album-info">
-                    <h3>In the End</h3>
-                    <div class="year">2019</div>
-                    <p style="font-size:13px;opacity:0.6;margin-top:10px;">绝唱，致敬Dolores</p>
-                </div>
-            </div>
+        <div id="imagePreview" class="image-preview"></div>
+        <div id="ocrIssues" class="ocr-issues"></div>
+        <textarea
+          id="ocrText"
+          spellcheck="false"
+          placeholder="这里会只显示货物名称和数量，例如：土豆 50斤。可修改后再放入消息框"
+        ></textarea>
+        <div class="actions">
+          <button id="ocrBtn" class="primary" type="button">识别图片</button>
+          <button id="importStandardsBtn" type="button">导入标准名称（忽略价格）</button>
+          <button id="appendOcrBtn" type="button">追加到消息框</button>
+          <button id="replaceOcrBtn" type="button">替换消息框</button>
         </div>
-    </section>
+      </section>
 
-    <!-- 代表金曲 -->
-    <section class="section" id="songs">
-        <h2 class="section-title fade-in">代表金曲</h2>
-        <div class="songs-grid">
-            <div class="song-card fade-in">
-                <h3>🌹 Zombie</h3>
-                <p class="year">1994 · No Need to Argue</p>
-                <p>最著名的反战歌曲，Dolores高亢的咽音在这首歌中达到巅峰。回应北爱尔兰冲突，成为乐队最具代表性的作品。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>🌙 Dreams</h3>
-                <p class="year">1993 · Everybody Else Is Doing It...</p>
-                <p>乐队首张专辑的主打曲目，轻快的旋律和Dolores梦幻般的声线完美结合，成为成名曲之一。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>🌸 Linger</h3>
-                <p class="year">1993 · Everybody Else Is Doing It...</p>
-                <p>另一首早期经典，旋律优美，歌词深情，展现了乐队在流行摇滚领域的才华。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>👨‍👩‍👧 Ode to My Family</h3>
-                <p class="year">1994 · No Need to Argue</p>
-                <p>探讨家庭主题的深度作品，Dolores歌词创作的成熟展现，感人至深。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>💫 When You're Gone</h3>
-                <p class="year">1997 · To the Faithful Departed</p>
-                <p>感人至深的抒情歌曲，表达对逝去亲人的思念，在全球获得巨大成功。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>☁️ Animal Instinct</h3>
-                <p class="year">2001 · Wake Up and Smell the Coffee</p>
-                <p>千禧年后的力作，展现乐队与时俱进的音乐创作能力。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>🎬 Just My Imagination</h3>
-                <p class="year">1999 · Bury the Hatchet</p>
-                <p>轻快活泼的节奏，展现乐队多变的一面。</p>
-            </div>
-            <div class="song-card fade-in">
-                <h3>✨ Promises</h3>
-                <p class="year">1999 · Bury the Hatchet</p>
-                <p>情感丰富的作品，Dolores的声线再次征服听众。</p>
-            </div>
+      <section class="panel summary-panel">
+        <div class="panel-head">
+          <h2>今日汇总</h2>
+          <div class="button-row">
+            <button id="copyDailyBtn" type="button">复制日报</button>
+            <button id="exportSummaryBtn" type="button">导出汇总</button>
+          </div>
         </div>
-    </section>
-
-    <!-- 页脚 -->
-    <footer>
-        <div class="social-links">
-            <a href="https://www.youtube.com" target="_blank">📺</a>
-            <a href="https://www.spotify.com" target="_blank">🎵</a>
-            <a href="https://www.apple.com/music" target="_blank">🍎</a>
+        <div class="stat-grid">
+          <div>
+            <strong id="statItems">0</strong>
+            <span>明细</span>
+          </div>
+          <div>
+            <strong id="statProducts">0</strong>
+            <span>货物</span>
+          </div>
+          <div>
+            <strong id="statRules">0</strong>
+            <span>规则</span>
+          </div>
         </div>
-        <p>Made with <span class="love">♥</span> for The Cranberries</p>
-        <p style="margin-top:10px;">1990 - 2019 · 永远的小红莓</p>
-        <p style="margin-top:5px;opacity:0.4;">Rest in Peace, Dolores O'Riordan (1971-2018)</p>
-    </footer>
+        <div class="table-wrap summary-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>汇总货物名</th>
+                <th class="num">数量</th>
+                <th>单位</th>
+                <th class="num">折算公斤</th>
+                <th class="num">条数</th>
+              </tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-    <script>
-        // 滚动动画
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+      <section class="panel details-panel">
+        <div class="panel-head">
+          <h2>识别明细</h2>
+          <div class="button-row">
+            <button id="applyRulesBtn" type="button">应用别名</button>
+            <button id="exportDetailsBtn" type="button">导出明细</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="details-table">
+            <thead>
+              <tr>
+                <th>发送人</th>
+                <th>货物原称</th>
+                <th>汇总货物名</th>
+                <th class="num">数量</th>
+                <th>单位</th>
+                <th>备注</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="detailsBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
+      <section class="panel compare-panel">
+        <div class="panel-head">
+          <h2>对方汇总核对</h2>
+          <div class="button-row">
+            <button id="parseOtherBtn" class="primary" type="button">开始核对</button>
+            <button id="copyCompareBtn" type="button">复制差异</button>
+            <button id="exportCompareBtn" type="button">导出核对</button>
+          </div>
+        </div>
+        <textarea
+          id="otherText"
+          spellcheck="false"
+          placeholder="把对方微信里发来的汇总粘贴到这里，例如：&#10;苹果 20箱&#10;矿泉水 23件&#10;土豆 70斤"
+        ></textarea>
+        <div class="compare-stats">
+          <span id="compareMatched">一致 0</span>
+          <span id="compareDiff">差异 0</span>
+          <span id="compareMissingMine">我方缺少 0</span>
+          <span id="compareMissingOther">对方缺少 0</span>
+        </div>
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>状态</th>
+                <th>货物</th>
+                <th class="num">我方数量</th>
+                <th class="num">对方数量</th>
+                <th>单位</th>
+                <th class="num">差额</th>
+              </tr>
+            </thead>
+            <tbody id="compareBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-        document.querySelectorAll('.fade-in').forEach(el => {
-            observer.observe(el);
-        });
+      <section class="panel alias-panel">
+        <div class="panel-head">
+          <h2>货物别名</h2>
+          <div class="button-row">
+            <button id="sanitizeDataBtn" class="ghost" type="button">按模板清理</button>
+            <button id="resetRulesBtn" class="ghost" type="button">恢复内置模板</button>
+          </div>
+        </div>
+        <div class="alias-form">
+          <input id="newStandard" type="text" placeholder="最终汇总名，如：土豆" />
+          <input id="newAliases" type="text" placeholder="别名，用逗号隔开，如：马铃薯, 洋芋" />
+          <button id="addRuleBtn" type="button">添加规则</button>
+        </div>
+        <div class="alias-bulk">
+          <textarea
+            id="bulkRules"
+            spellcheck="false"
+            placeholder="批量导入格式：&#10;土豆|马铃薯,洋芋&#10;矿泉水|农夫山泉,怡宝,水&#10;去皮五花肉（热鲜）|去皮五花肉,五花肉去皮"
+          ></textarea>
+          <div class="button-row">
+            <button id="importRulesBtn" type="button">批量导入</button>
+            <button id="importTemplateCsvBtn" type="button">导入模板 CSV</button>
+          </div>
+          <input id="templateCsvInput" type="file" accept=".csv,text/csv" hidden />
+          <p id="templateStatus" class="status-note"></p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>最终汇总名</th>
+                <th>别名</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rulesBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-        // 平滑滚动
-        document.querySelectorAll('nav a').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                target.scrollIntoView({ behavior: 'smooth' });
-            });
-        });
-    </script>
-</body>
+      <section class="panel spec-panel">
+        <div class="panel-head">
+          <h2>标准重量</h2>
+        </div>
+        <div class="spec-form">
+          <input id="specStandard" type="text" placeholder="标准名，如：去皮五花肉（热鲜）" />
+          <input id="specWeightKg" type="number" step="0.001" min="0" placeholder="每件公斤，如：10" />
+          <input id="specUnits" type="text" placeholder="件单位，如：件,箱,包（按件时填写）" />
+          <button id="addSpecBtn" type="button">添加规格</button>
+        </div>
+        <div class="spec-bulk">
+          <textarea
+            id="bulkSpecs"
+            spellcheck="false"
+            placeholder="批量导入格式（每行一条）：&#10;去皮五花肉（热鲜）|10|件&#10;带皮五花肉（热鲜）|15|件&#10;土豆|重量|斤,公斤"
+          ></textarea>
+          <button id="importSpecsBtn" type="button">批量导入规格</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>标准名</th>
+                <th class="num">每件公斤</th>
+                <th>件单位</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="specBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+    <script async src="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>
