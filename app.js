@@ -15,6 +15,7 @@ const STORAGE = {
   otherText: "cargo-ledger-other-text",
   otherEntries: "cargo-ledger-other-entries",
   entries: "cargo-ledger-entries",
+  importLogs: "cargo-ledger-import-logs",
   rules: "cargo-ledger-rules",
 };
 const DEFAULT_WECOM_BRIDGE_URL = "https://wecom-order-bridge.sloc-cn.workers.dev";
@@ -132,6 +133,8 @@ let state = {
   specs: [],
   entries: [],
   otherEntries: [],
+  importLogs: [],
+  selectedImportLogId: "",
   ocrImages: [],
   ocrText: "",
   ocrProvider: "online",
@@ -201,6 +204,7 @@ function bindElements() {
     if (!String(pastedText).trim()) return;
     event.preventDefault();
     importIncomingText(pastedText, {
+      source: "paste",
       appendToRaw: true,
       emptyToast: "请先复制微信聊天内容",
       noEntryToast: "已粘贴，但未识别到货物数量",
@@ -422,6 +426,18 @@ function bindElements() {
 
   byId("detailsBody").addEventListener("input", onDetailsInput);
   byId("detailsBody").addEventListener("click", onDetailsClick);
+  byId("importLogBody").addEventListener("click", onImportLogClick);
+  byId("clearImportLogsBtn").addEventListener("click", () => {
+    const ok = typeof window !== "undefined" && typeof window.confirm === "function"
+      ? window.confirm("确定清空输入记录吗？")
+      : true;
+    if (!ok) return;
+    state.importLogs = [];
+    state.selectedImportLogId = "";
+    saveState();
+    renderImportLogs();
+    showToast("输入记录已清空");
+  });
   byId("rulesBody").addEventListener("input", onRulesInput);
   byId("rulesBody").addEventListener("click", onRulesClick);
   byId("specBody").addEventListener("click", onSpecClick);
@@ -446,6 +462,8 @@ function loadState() {
   state.otherText = localStorage.getItem(STORAGE.otherText) || "";
   state.entries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.entries), []));
   state.otherEntries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.otherEntries), []));
+  state.importLogs = normalizeImportLogs(safeParse(localStorage.getItem(STORAGE.importLogs), []));
+  state.selectedImportLogId = state.importLogs[0]?.id || "";
   state.dayAutoReset = false;
   if (lastActiveDay !== today) {
     resetDailyWorkingData(today);
@@ -469,6 +487,8 @@ function resetDailyWorkingData(nextDate) {
   state.otherText = "";
   state.entries = [];
   state.otherEntries = [];
+  state.importLogs = [];
+  state.selectedImportLogId = "";
   state.ocrImages = [];
   state.ocrText = "";
   state.ocrIssues = [];
@@ -490,6 +510,7 @@ function saveState() {
   localStorage.setItem(STORAGE.otherText, state.otherText);
   localStorage.setItem(STORAGE.entries, JSON.stringify(state.entries));
   localStorage.setItem(STORAGE.otherEntries, JSON.stringify(state.otherEntries));
+  localStorage.setItem(STORAGE.importLogs, JSON.stringify(state.importLogs));
   localStorage.setItem(STORAGE.rules, JSON.stringify(state.rules));
   localStorage.setItem(STORAGE.specs, JSON.stringify(state.specs));
 }
@@ -525,6 +546,8 @@ function renderAll() {
   byId("ocrApiKey").value = state.ocrApiKey;
   byId("ocrStrictMode").checked = state.ocrStrictMode;
   byId("ocrDoubleCheck").checked = state.ocrDoubleCheck;
+  const summaryPieceHead = document.querySelector(".summary-wrap thead th:nth-child(4)");
+  if (summaryPieceHead) summaryPieceHead.textContent = "折算件数";
   renderImagePreview();
   renderOcrIssues();
   renderDetails();
@@ -533,6 +556,7 @@ function renderAll() {
   renderTemplateStatus();
   renderSummary();
   renderCompare();
+  renderImportLogs();
   renderWecomSyncState();
   setupWecomAutoSync();
 }
@@ -663,6 +687,7 @@ async function syncWecomOrders(options = {}) {
 
 function importIncomingText(incomingText, options = {}) {
   const text = String(incomingText || "").trim();
+  const source = String(options.source || "input");
   if (!text) {
     if (!options.silentEmpty) showToast(options.emptyToast || "请先粘贴聊天记录");
     return { added: 0, parsed: 0, cancelled: false };
@@ -674,6 +699,15 @@ function importIncomingText(incomingText, options = {}) {
 
   const entries = parseMessages(text, state.rules);
   if (!entries.length) {
+    addImportLog({
+      source,
+      text,
+      parsedCount: 0,
+      addedCount: 0,
+      cancelled: false,
+      details: [],
+      createdAt: Date.now(),
+    });
     saveState();
     renderAll();
     if (!options.silentNoEntry) showToast(options.noEntryToast || "没有识别到货物数量");
@@ -682,6 +716,15 @@ function importIncomingText(incomingText, options = {}) {
 
   const duplicateHint = detectDuplicateImport(entries);
   if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
+    addImportLog({
+      source,
+      text,
+      parsedCount: entries.length,
+      addedCount: 0,
+      cancelled: true,
+      details: entries,
+      createdAt: Date.now(),
+    });
     saveState();
     renderAll();
     if (!options.silentCancel) showToast(options.cancelToast || "已取消录入");
@@ -689,6 +732,15 @@ function importIncomingText(incomingText, options = {}) {
   }
 
   const added = appendDailyEntries(entries);
+  addImportLog({
+    source,
+    text,
+    parsedCount: entries.length,
+    addedCount: added,
+    cancelled: false,
+    details: entries,
+    createdAt: Date.now(),
+  });
   saveState();
   renderAll();
   if (!options.silentSuccess) {
@@ -701,6 +753,7 @@ function importIncomingText(incomingText, options = {}) {
 
 function parseCurrentRawText() {
   return importIncomingText(state.rawText, {
+    source: "manual-parse",
     appendToRaw: false,
     emptyToast: "请先粘贴聊天记录",
     noEntryToast: "没有识别到货物数量",
@@ -722,6 +775,7 @@ async function pasteAndImportFromClipboard() {
     }
 
     importIncomingText(text, {
+      source: "clipboard-button",
       appendToRaw: true,
       emptyToast: "请先复制微信聊天内容",
       noEntryToast: "已粘贴，但未识别到货物数量",
@@ -829,7 +883,7 @@ function renderSummary() {
         <td>${escapeHtml(row.name)}</td>
         <td class="num">${escapeHtml(formatNumber(row.quantity))}</td>
         <td>${escapeHtml(row.unit)}</td>
-        <td class="num">${escapeHtml(formatOptionalNumber(row.kgEquivalent))}</td>
+        <td class="num">${escapeHtml(formatOptionalNumber(row.pieceEquivalent))}</td>
         <td class="num">${row.count}</td>
       </tr>
     `,
@@ -872,6 +926,88 @@ function renderCompare() {
     `,
     )
     .join("");
+}
+
+function renderImportLogs() {
+  const body = byId("importLogBody");
+  const detail = byId("importLogDetail");
+  if (!body || !detail) return;
+
+  if (!state.importLogs.length) {
+    body.innerHTML = `<tr><td class="empty" colspan="6">暂无输入记录</td></tr>`;
+    detail.value = "";
+    return;
+  }
+
+  if (!state.selectedImportLogId || !state.importLogs.some((item) => item.id === state.selectedImportLogId)) {
+    state.selectedImportLogId = state.importLogs[0].id;
+  }
+
+  body.innerHTML = state.importLogs
+    .map((item) => {
+      const preview = String(item.text || "").replace(/\s+/g, " ").trim().slice(0, 60);
+      const sourceLabel = importSourceLabel(item.source);
+      const isActive = item.id === state.selectedImportLogId;
+      return `
+      <tr data-id="${escapeAttr(item.id)}" class="${isActive ? "active-log-row" : ""}">
+        <td>${escapeHtml(formatDateTime(item.createdAt))}</td>
+        <td>${escapeHtml(sourceLabel)}</td>
+        <td title="${escapeAttr(item.text || "")}">${escapeHtml(preview || "-")}</td>
+        <td class="num">${item.parsedCount}</td>
+        <td class="num">${item.addedCount}</td>
+        <td><button type="button" data-action="view-import-log">查看</button></td>
+      </tr>
+    `;
+    })
+    .join("");
+
+  const current = state.importLogs.find((item) => item.id === state.selectedImportLogId) || state.importLogs[0];
+  if (!current) {
+    detail.value = "";
+    return;
+  }
+
+  const parsedLines = (current.details || []).map(
+    (entry, index) =>
+      `${index + 1}. ${entry.standardName || entry.originalName} ${formatNumber(entry.quantity)}${entry.unit || ""}${entry.sender ? `  [${entry.sender}]` : ""}`,
+  );
+
+  detail.value = [
+    `时间：${formatDateTime(current.createdAt)}`,
+    `来源：${importSourceLabel(current.source)}`,
+    `识别：${current.parsedCount} 条`,
+    `入账：${current.addedCount} 条${current.cancelled ? "（已取消）" : ""}`,
+    "",
+    "输入原文：",
+    current.text || "",
+    "",
+    "识别明细：",
+    parsedLines.length ? parsedLines.join("\n") : "（无）",
+  ].join("\n");
+}
+
+function onImportLogClick(event) {
+  const button = event.target.closest("button[data-action='view-import-log']");
+  if (!button) return;
+  const row = button.closest("tr[data-id]");
+  if (!row) return;
+  state.selectedImportLogId = row.dataset.id;
+  renderImportLogs();
+}
+
+function importSourceLabel(source) {
+  if (source === "clipboard-button") return "复制入账";
+  if (source === "paste") return "粘贴事件";
+  if (source === "manual-parse") return "手动识别";
+  if (source === "wecom-sync") return "企业微信同步";
+  return "输入";
+}
+
+function addImportLog(item) {
+  const next = normalizeImportLog(item);
+  state.importLogs.unshift(next);
+  if (state.importLogs.length > 300) state.importLogs = state.importLogs.slice(0, 300);
+  state.selectedImportLogId = next.id;
 }
 
 function renderImagePreview() {
@@ -1376,6 +1512,7 @@ function summarizeEntries(entries, specs = []) {
       ...row,
       quantity: roundNumber(row.quantity),
       kgEquivalent: toKilograms(row.name, row.quantity, row.unit, specs),
+      pieceEquivalent: toPieces(row.name, row.quantity, row.unit, specs),
       originals: Array.from(row.originals),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "zh-Hans-CN"));
@@ -1386,11 +1523,20 @@ function normalizeSummaryMeasure(name, quantity, unit, specs) {
   if (!Number.isFinite(q) || q <= 0) return null;
 
   const normalizedUnit = normalizeUnit(unit);
+  const normalizedUnitKey = normalizeText(normalizedUnit);
+  const spec = findSpecByName(name, specs);
   const directFactor = getUnitKgFactor(normalizeText(normalizedUnit));
   if (directFactor !== null) {
     return {
       quantity: roundNumber(q * directFactor),
       unit: "公斤",
+    };
+  }
+
+  if (spec && Number.isFinite(spec.pieceWeightKg) && isPieceUnitAllowedForSpec(normalizedUnitKey, spec)) {
+    return {
+      quantity: roundNumber(q * spec.pieceWeightKg),
+      unit: "鍏枻",
     };
   }
 
@@ -1446,17 +1592,33 @@ function toKilograms(name, quantity, unit, specs) {
 
   const spec = findSpecByName(name, specs);
   if (!spec || !Number.isFinite(spec.pieceWeightKg)) return null;
-  const allowedUnits = (spec.pieceUnits || []).map((item) => normalizeText(item));
-  if (!allowedUnits.length || allowedUnits.includes(u)) {
+  if (isPieceUnitAllowedForSpec(u, spec)) {
     return roundNumber(q * spec.pieceWeightKg);
   }
 
   return null;
 }
 
+function toPieces(name, quantity, unit, specs) {
+  const q = Number(quantity);
+  if (!Number.isFinite(q) || q <= 0) return null;
+
+  const kg = toKilograms(name, q, unit, specs);
+  if (!Number.isFinite(kg)) return null;
+  const spec = findSpecByName(name, specs);
+  if (!spec || !Number.isFinite(spec.pieceWeightKg) || spec.pieceWeightKg <= 0) return null;
+  return roundNumber(kg / spec.pieceWeightKg);
+}
+
 function findSpecByName(name, specs) {
   const key = normalizeText(name);
   return specs.find((item) => normalizeText(item.standard) === key);
+}
+
+function isPieceUnitAllowedForSpec(normalizedUnit, spec) {
+  const allowedUnits = (spec.pieceUnits || []).map((item) => normalizeText(item));
+  if (!allowedUnits.length) return true;
+  return allowedUnits.includes(normalizedUnit);
 }
 
 function getUnitKgFactor(normalizedUnit) {
@@ -3543,6 +3705,38 @@ function normalizeEntries(value) {
     }));
 }
 
+function normalizeImportLogs(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => normalizeImportLog(item, index));
+}
+
+function normalizeImportLog(item, index = 0) {
+  const details = Array.isArray(item.details)
+    ? item.details
+        .filter((entry) => entry && typeof entry === "object")
+        .map((entry) => ({
+          sender: String(entry.sender || ""),
+          originalName: String(entry.originalName || ""),
+          standardName: String(entry.standardName || entry.originalName || ""),
+          quantity: Number.isFinite(Number(entry.quantity)) ? Number(entry.quantity) : 0,
+          unit: String(entry.unit || ""),
+        }))
+    : [];
+
+  return {
+    id: item.id ? String(item.id) : makeId(Date.now(), "import", index),
+    createdAt: Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : Date.now(),
+    source: String(item.source || "input"),
+    text: String(item.text || ""),
+    parsedCount: Number.isFinite(Number(item.parsedCount)) ? Number(item.parsedCount) : details.length,
+    addedCount: Number.isFinite(Number(item.addedCount)) ? Number(item.addedCount) : 0,
+    cancelled: Boolean(item.cancelled),
+    details,
+  };
+}
+
 function normalizeRules(value) {
   if (!Array.isArray(value)) return [];
   return value
@@ -3577,6 +3771,13 @@ function todayISO() {
   const date = new Date();
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 10);
+}
+
+function formatDateTime(value) {
+  const date = new Date(Number(value) || Date.now());
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (num) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 function byId(id) {

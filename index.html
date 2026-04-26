@@ -163,6 +163,31 @@
         </div>
       </section>
 
+      <section class="panel import-log-panel" data-view="manage">
+        <div class="panel-head">
+          <h2>输入记录</h2>
+          <div class="button-row">
+            <button id="clearImportLogsBtn" class="ghost danger" type="button">清空输入记录</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="import-log-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>来源</th>
+                <th>输入内容</th>
+                <th class="num">识别</th>
+                <th class="num">入账</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="importLogBody"></tbody>
+          </table>
+        </div>
+        <textarea id="importLogDetail" readonly spellcheck="false" placeholder="点击“查看”可看单次输入明细"></textarea>
+      </section>
+
       <section class="panel compare-panel" data-view="manage">
         <div class="panel-head">
           <h2>对方汇总核对</h2>

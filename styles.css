@@ -411,10 +411,29 @@ button:disabled {
 }
 
 .details-panel,
+.import-log-panel,
 .compare-panel,
 .alias-panel,
 .spec-panel {
   grid-column: 1 / -1;
+}
+
+.import-log-table {
+  min-width: 840px;
+}
+
+.import-log-panel textarea {
+  display: block;
+  min-height: 180px;
+  margin: 12px 16px 16px;
+  width: calc(100% - 32px);
+  padding: 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.active-log-row td {
+  background: #eef6ff;
 }
 
 .compare-panel textarea {
