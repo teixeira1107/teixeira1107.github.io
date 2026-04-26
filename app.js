@@ -892,7 +892,7 @@ function renderSummary() {
 }
 
 function renderCompare() {
-  const rows = compareEntries(state.entries, state.otherEntries);
+  const rows = compareEntries(state.entries, state.otherEntries, state.specs);
   const counts = rows.reduce(
     (acc, row) => {
       acc[row.status] = (acc[row.status] || 0) + 1;
@@ -1526,6 +1526,20 @@ function normalizeSummaryMeasure(name, quantity, unit, specs) {
   const normalizedUnitKey = normalizeText(normalizedUnit);
   const spec = findSpecByName(name, specs);
   const directFactor = getUnitKgFactor(normalizeText(normalizedUnit));
+  const kgUnit = normalizeUnit("kg");
+  if (directFactor !== null) {
+    return {
+      quantity: roundNumber(q * directFactor),
+      unit: kgUnit,
+    };
+  }
+
+  if (spec && Number.isFinite(spec.pieceWeightKg) && isPieceUnitAllowedForSpec(normalizedUnitKey, spec)) {
+    return {
+      quantity: roundNumber(q * spec.pieceWeightKg),
+      unit: kgUnit,
+    };
+  }
   if (directFactor !== null) {
     return {
       quantity: roundNumber(q * directFactor),
@@ -1546,9 +1560,9 @@ function normalizeSummaryMeasure(name, quantity, unit, specs) {
   };
 }
 
-function compareEntries(mineEntries, otherEntries) {
-  const mineMap = summaryMap(summarizeEntries(mineEntries));
-  const otherMap = summaryMap(summarizeEntries(otherEntries));
+function compareEntries(mineEntries, otherEntries, specs = []) {
+  const mineMap = summaryMap(summarizeEntries(mineEntries, specs));
+  const otherMap = summaryMap(summarizeEntries(otherEntries, specs));
   const keys = unique([...mineMap.keys(), ...otherMap.keys()]);
 
   return keys
@@ -1623,6 +1637,13 @@ function isPieceUnitAllowedForSpec(normalizedUnit, spec) {
 
 function getUnitKgFactor(normalizedUnit) {
   if (!normalizedUnit) return null;
+  if (normalizedUnit === normalizeText("\u516c\u65a4")) return 1;
+  if (normalizedUnit === normalizeText("\u5343\u514b")) return 1;
+  if (normalizedUnit === "kg") return 1;
+  if (normalizedUnit === normalizeText("\u65a4")) return 0.5;
+  if (normalizedUnit === normalizeText("\u5e02\u65a4")) return 0.5;
+  if (normalizedUnit === normalizeText("\u514b") || normalizedUnit === "g") return 0.001;
+  if (normalizedUnit === normalizeText("\u5428")) return 1000;
   if (["kg", "公斤", "千克"].includes(normalizedUnit)) return 1;
   if (["斤"].includes(normalizedUnit)) return 0.5;
   if (["g", "克"].includes(normalizedUnit)) return 0.001;
@@ -3351,7 +3372,7 @@ function exportSummary() {
 }
 
 function exportCompare() {
-  const rows = compareEntries(state.entries, state.otherEntries).map((row) => ({
+  const rows = compareEntries(state.entries, state.otherEntries, state.specs).map((row) => ({
     日期: state.workDate,
     状态: statusLabel(row.status),
     货物: row.name,
@@ -3382,7 +3403,7 @@ async function copyDailyReport() {
 }
 
 async function copyCompareReport() {
-  const rows = compareEntries(state.entries, state.otherEntries);
+  const rows = compareEntries(state.entries, state.otherEntries, state.specs);
   const problemRows = rows.filter((row) => row.status !== "matched");
 
   if (!rows.length) {
@@ -3585,6 +3606,12 @@ function normalizeUnit(unit) {
   const value = String(unit || "")
     .replace(/\s+/g, "")
     .trim();
+  const ascii = value.toLowerCase();
+  if (ascii === "kg" || ascii === "kgs" || ascii === "kilogram" || ascii === "kilograms") return "\u516c\u65a4";
+  if (value === "\u516c\u65a4" || value === "\u5343\u514b") return "\u516c\u65a4";
+  if (ascii === "g" || value === "\u514b") return "\u514b";
+  if (value === "\u5e02\u65a4" || value === "\u65a4") return "\u65a4";
+  if (value === "\u4e2a" || value === "\u53ea") return "\u4ef6";
   if (/^(kg|kgs?|KG|KGS|千克|公斤)$/.test(value)) return "公斤";
   if (/^(g|G|克)$/.test(value)) return "克";
   if (/^(市斤|斤)$/.test(value)) return "斤";
