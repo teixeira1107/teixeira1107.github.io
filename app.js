@@ -780,13 +780,18 @@ function importIncomingText(incomingText, options = {}) {
 
 function parseCurrentRawText() {
   const source = state.pendingImportSource === "ocr" ? "ocr" : "manual";
-  return importIncomingText(state.rawText, {
+  const result = importIncomingText(state.rawText, {
     source,
     appendToRaw: false,
     emptyToast: "请先粘贴聊天记录",
     noEntryToast: "没有识别到货物数量",
     successToast: (added) => `新增 ${added} 条，今日累计 ${state.entries.length} 条`,
   });
+  if (source === "ocr" && result.parsed > 0 && !result.cancelled) {
+    state.pendingImportSource = "";
+    saveState();
+  }
+  return result;
 }
 
 async function pasteAndImportFromClipboard() {
