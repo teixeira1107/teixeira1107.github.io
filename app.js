@@ -16,6 +16,7 @@ const STORAGE = {
   otherEntries: "cargo-ledger-other-entries",
   entries: "cargo-ledger-entries",
   importLogs: "cargo-ledger-import-logs",
+  dailyArchive: "cargo-ledger-daily-archive",
   rules: "cargo-ledger-rules",
 };
 const DEFAULT_WECOM_BRIDGE_URL = "https://wecom-order-bridge.sloc-cn.workers.dev";
@@ -134,6 +135,7 @@ let state = {
   entries: [],
   otherEntries: [],
   importLogs: [],
+  dailyArchive: [],
   selectedImportLogId: "",
   ocrImages: [],
   ocrText: "",
@@ -243,8 +245,14 @@ function bindElements() {
       ? window.confirm("确定清空今日所有记录吗？此操作不可恢复。")
       : true;
     if (!ok) return;
+    archiveCurrentDaySnapshot(state.workDate);
+    state.rawText = "";
+    state.otherText = "";
     state.entries = [];
     state.otherEntries = [];
+    state.importLogs = [];
+    state.selectedImportLogId = "";
+    state.pendingImportSource = "";
     saveState();
     renderAll();
     showToast("今日记录已清空");
@@ -467,6 +475,7 @@ function loadState() {
   state.entries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.entries), []));
   state.otherEntries = normalizeEntries(safeParse(localStorage.getItem(STORAGE.otherEntries), []));
   state.importLogs = normalizeImportLogs(safeParse(localStorage.getItem(STORAGE.importLogs), []));
+  state.dailyArchive = normalizeDailyArchive(safeParse(localStorage.getItem(STORAGE.dailyArchive), []));
   state.selectedImportLogId = state.importLogs[0]?.id || "";
   state.dayAutoReset = false;
   if (lastActiveDay !== today) {
@@ -486,6 +495,7 @@ function loadState() {
 }
 
 function resetDailyWorkingData(nextDate) {
+  archiveCurrentDaySnapshot(state.workDate || todayISO());
   state.workDate = nextDate || todayISO();
   state.rawText = "";
   state.otherText = "";
@@ -496,6 +506,7 @@ function resetDailyWorkingData(nextDate) {
   state.ocrImages = [];
   state.ocrText = "";
   state.ocrIssues = [];
+  state.pendingImportSource = "";
 }
 
 function saveState() {
@@ -515,8 +526,52 @@ function saveState() {
   localStorage.setItem(STORAGE.entries, JSON.stringify(state.entries));
   localStorage.setItem(STORAGE.otherEntries, JSON.stringify(state.otherEntries));
   localStorage.setItem(STORAGE.importLogs, JSON.stringify(state.importLogs));
+  localStorage.setItem(STORAGE.dailyArchive, JSON.stringify(state.dailyArchive));
   localStorage.setItem(STORAGE.rules, JSON.stringify(state.rules));
   localStorage.setItem(STORAGE.specs, JSON.stringify(state.specs));
+}
+
+function archiveCurrentDaySnapshot(workDate) {
+  const hasData =
+    state.entries.length ||
+    state.otherEntries.length ||
+    state.importLogs.length ||
+    String(state.rawText || "").trim() ||
+    String(state.otherText || "").trim();
+  if (!hasData) return;
+
+  const date = String(workDate || todayISO()).trim() || todayISO();
+  const summaryRows = summarizeEntries(state.entries, state.specs).map((row) => ({
+    name: String(row.name || ""),
+    quantity: Number(row.quantity) || 0,
+    unit: String(row.unit || ""),
+    kgEquivalent: Number.isFinite(Number(row.kgEquivalent)) ? Number(row.kgEquivalent) : null,
+    pieceEquivalent: Number.isFinite(Number(row.pieceEquivalent)) ? Number(row.pieceEquivalent) : null,
+  }));
+  const compareRows = compareEntries(state.entries, state.otherEntries, state.specs);
+  const compareStats = compareRows.reduce(
+    (acc, row) => {
+      const key = String(row.status || "");
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    },
+    { matched: 0, different: 0, missingMine: 0, missingOther: 0 },
+  );
+
+  const snapshot = {
+    id: makeId(Date.now(), "archive", date),
+    date,
+    savedAt: Date.now(),
+    entryCount: state.entries.length,
+    otherEntryCount: state.otherEntries.length,
+    importCount: state.importLogs.length,
+    summaryRows,
+    compareStats,
+  };
+
+  const filtered = state.dailyArchive.filter((item) => String(item.date || "") !== date);
+  filtered.unshift(snapshot);
+  state.dailyArchive = filtered.slice(0, 90);
 }
 
 function setView(nextView) {
@@ -1165,11 +1220,23 @@ function splitMessage(message) {
 
 function extractItems(chunk, sourceLine, meta, rules) {
   const entries = [];
+  let skipUnitlessFallback = false;
+  let skipBeforePattern = false;
   const usedRanges = [];
   const afterRegex = new RegExp(`(${PRODUCT_PATTERN})\\s*(${NUMBER_PATTERN})\\s*(${UNIT_PATTERN})`, "g");
   const beforeRegex = new RegExp(`(${NUMBER_PATTERN})\\s*(${UNIT_PATTERN})\\s*(${PRODUCT_PATTERN})`, "g");
 
   collectMatches(afterRegex, chunk, usedRanges).forEach((match) => {
+    if (skipBeforePattern) return;
+
+    const headSized = tryResolveHeadSizeNameItemV2(chunk, match, sourceLine, meta, rules);
+    if (headSized.handled) {
+      skipBeforePattern = true;
+      if (headSized.entry) entries.push(headSized.entry);
+      else skipUnitlessFallback = true;
+      return;
+    }
+
     const resolved = resolveAfterPatternNameQuantity(match[1], match[2], match[3], rules);
     const originalName = resolved.originalName;
     const quantity = resolved.quantity;
@@ -1179,16 +1246,18 @@ function extractItems(chunk, sourceLine, meta, rules) {
     }
   });
 
-  collectMatches(beforeRegex, chunk, usedRanges).forEach((match) => {
-    const originalName = cleanupName(match[3]);
-    const quantity = parseNumber(match[1]);
-    const unit = normalizeUnit(match[2]);
-    if (isValidItem(originalName, quantity, unit)) {
-      entries.push(makeEntry(sourceLine, meta, originalName, quantity, unit));
-    }
-  });
+  if (!skipBeforePattern) {
+    collectMatches(beforeRegex, chunk, usedRanges).forEach((match) => {
+      const originalName = cleanupName(match[3]);
+      const quantity = parseNumber(match[1]);
+      const unit = normalizeUnit(match[2]);
+      if (isValidItem(originalName, quantity, unit)) {
+        entries.push(makeEntry(sourceLine, meta, originalName, quantity, unit));
+      }
+    });
+  }
 
-  if (!entries.length) {
+  if (!entries.length && !skipUnitlessFallback) {
     extractKnownUnitlessItems(chunk, sourceLine, meta, rules).forEach((entry) => entries.push(entry));
   }
 
@@ -1196,6 +1265,76 @@ function extractItems(chunk, sourceLine, meta, rules) {
     ...entry,
     standardName: standardizeName(entry.originalName, rules),
   }));
+}
+
+function tryResolveHeadSizeNameItemV2(chunk, match, sourceLine, meta, rules) {
+  const rawUnit = String(match[3] || "").trim();
+  if (!/\u4e2a/.test(rawUnit)) return { handled: false, entry: null };
+
+  const geUnit = normalizeText("\u4e2a");
+
+  const fullMatch = String(match[0] || "");
+  const endIndex = Number(match.index || 0) + fullMatch.length;
+  const tail = String(chunk || "").slice(endIndex);
+  const headPrefix = tail.match(/^\s*\u5934/);
+  if (!headPrefix) return { handled: false, entry: null };
+
+  const baseName = cleanupName(match[1]);
+  const headNumber = parseNumber(match[2]);
+  if (!baseName || !Number.isFinite(headNumber) || headNumber <= 0) {
+    return { handled: true, entry: null };
+  }
+
+  const sizedName = cleanupName(`${baseName}${formatNumber(headNumber)}\u4e2a\u5934`);
+  const rest = tail.slice(headPrefix[0].length).trim();
+  if (!rest) return { handled: true, entry: null };
+
+  const quantities = findQuantities(rest);
+  const quantity = quantities.find((item) => {
+    const normalized = normalizeText(normalizeUnit(item.unit || ""));
+    return normalized && normalized !== geUnit;
+  });
+  if (!quantity) return { handled: true, entry: null };
+
+  const entry = {
+    ...makeEntry(sourceLine, meta, sizedName, quantity.value, normalizeUnit(quantity.unit || "")),
+    standardName: standardizeName(sizedName, rules),
+  };
+  return { handled: true, entry };
+}
+
+function tryResolveHeadSizeNameItem(chunk, match, sourceLine, meta, rules) {
+  const unit = normalizeUnit(match[3] || "");
+  if (normalizeText(unit) !== normalizeText("个")) return { handled: false, entry: null };
+
+  const fullMatch = String(match[0] || "");
+  const endIndex = Number(match.index || 0) + fullMatch.length;
+  const tail = String(chunk || "").slice(endIndex);
+  const headPrefix = tail.match(/^\s*头/);
+  if (!headPrefix) return { handled: false, entry: null };
+
+  const baseName = cleanupName(match[1]);
+  const headNumber = parseNumber(match[2]);
+  if (!baseName || !Number.isFinite(headNumber) || headNumber <= 0) {
+    return { handled: true, entry: null };
+  }
+
+  const sizedName = cleanupName(`${baseName}${formatNumber(headNumber)}个头`);
+  const rest = tail.slice(headPrefix[0].length).trim();
+  if (!rest) return { handled: true, entry: null };
+
+  const quantities = findQuantities(rest);
+  const quantity = quantities.find((item) => {
+    const normalized = normalizeText(normalizeUnit(item.unit || ""));
+    return normalized && normalized !== normalizeText("个");
+  });
+  if (!quantity) return { handled: true, entry: null };
+
+  const entry = {
+    ...makeEntry(sourceLine, meta, sizedName, quantity.value, normalizeUnit(quantity.unit || "")),
+    standardName: standardizeName(sizedName, rules),
+  };
+  return { handled: true, entry };
 }
 
 function resolveAfterPatternNameQuantity(rawName, rawQuantity, rawUnit, rules) {
@@ -3780,6 +3919,23 @@ function normalizeImportLogs(value) {
   return value
     .filter((item) => item && typeof item === "object")
     .map((item, index) => normalizeImportLog(item, index));
+}
+
+function normalizeDailyArchive(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => ({
+      id: item.id ? String(item.id) : makeId(Date.now(), "archive", index),
+      date: String(item.date || ""),
+      savedAt: Number.isFinite(Number(item.savedAt)) ? Number(item.savedAt) : Date.now(),
+      entryCount: Number.isFinite(Number(item.entryCount)) ? Number(item.entryCount) : 0,
+      otherEntryCount: Number.isFinite(Number(item.otherEntryCount)) ? Number(item.otherEntryCount) : 0,
+      importCount: Number.isFinite(Number(item.importCount)) ? Number(item.importCount) : 0,
+      summaryRows: Array.isArray(item.summaryRows) ? item.summaryRows.slice(0, 300) : [],
+      compareStats: item.compareStats && typeof item.compareStats === "object" ? item.compareStats : {},
+    }))
+    .slice(0, 90);
 }
 
 function normalizeImportLog(item, index = 0) {
