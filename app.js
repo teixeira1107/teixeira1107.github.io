@@ -206,6 +206,13 @@ function bindElements() {
   byId("rawText").addEventListener("paste", (event) => {
     const pastedText = event.clipboardData?.getData("text") || "";
     if (!String(pastedText).trim()) return;
+    setTimeout(() => {
+      state.rawText = byId("rawText").value || "";
+      state.pendingImportSource = "";
+      saveState();
+      showToast("已粘贴，请点击“识别消息”后再记录");
+    }, 0);
+    return;
     event.preventDefault();
     importIncomingText(pastedText, {
       source: "paste",
@@ -861,6 +868,13 @@ async function pasteAndImportFromClipboard() {
       showToast("剪贴板没有可用内容");
       return;
     }
+
+    state.rawText = [state.rawText.trim(), text.trim()].filter(Boolean).join("\n");
+    state.pendingImportSource = "";
+    byId("rawText").value = state.rawText;
+    saveState();
+    showToast("已粘贴到输入框，请点击“识别消息”后再记录");
+    return;
 
     importIncomingText(text, {
       source: "clipboard-button",
