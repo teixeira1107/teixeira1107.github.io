@@ -143,6 +143,7 @@ let state = {
   ocrDoubleCheck: true,
   ocrIssues: [],
   wecomSyncBusy: false,
+  pendingImportSource: "",
 };
 let wecomAutoTimer = null;
 
@@ -196,6 +197,7 @@ function bindElements() {
 
   byId("rawText").addEventListener("input", (event) => {
     state.rawText = event.target.value;
+    state.pendingImportSource = "";
     saveState();
   });
 
@@ -230,6 +232,7 @@ function bindElements() {
     state.ocrText = "";
     state.ocrIssues = [];
     state.ocrImages = [];
+    state.pendingImportSource = "";
     saveState();
     renderAll();
     showToast("已清空输入区，今日记录保留");
@@ -451,7 +454,8 @@ function loadState() {
   state.view = localStorage.getItem(STORAGE.view) || "main";
   if (!["main", "manage"].includes(state.view)) state.view = "main";
   state.wecomBridgeUrl = localStorage.getItem(STORAGE.wecomBridgeUrl) || DEFAULT_WECOM_BRIDGE_URL;
-  state.wecomAutoSync = localStorage.getItem(STORAGE.wecomAutoSync) === "1";
+  const wecomAutoSyncSaved = localStorage.getItem(STORAGE.wecomAutoSync);
+  state.wecomAutoSync = wecomAutoSyncSaved === null ? true : wecomAutoSyncSaved === "1";
   state.rawText = localStorage.getItem(STORAGE.raw) || "";
   state.templateVersion = localStorage.getItem(STORAGE.templateVersion) || "";
   state.templateCsv = localStorage.getItem(STORAGE.templateCsv) || "";
@@ -588,16 +592,30 @@ function normalizeBridgePullUrl(rawUrl) {
 
   const path = url.pathname.replace(/\/+$/g, "");
   let nextPath = path;
-  if (!nextPath || nextPath === "/") nextPath = "/api/wecom/pull";
-  else if (nextPath === "/api") nextPath = "/api/wecom/pull";
-  else if (nextPath === "/api/wecom") nextPath = "/api/wecom/pull";
-  else if (nextPath === "/wecom/callback") nextPath = "/api/wecom/pull";
-  else if (nextPath !== "/api/wecom/pull") nextPath = `${nextPath}/api/wecom/pull`.replace(/\/{2,}/g, "/");
+  if (!nextPath || nextPath === "/") nextPath = "/api/import/pull";
+  else if (nextPath === "/api") nextPath = "/api/import/pull";
+  else if (nextPath === "/api/import") nextPath = "/api/import/pull";
+  else if (nextPath === "/api/wecom") nextPath = "/api/import/pull";
+  else if (nextPath === "/api/wecom/pull") nextPath = "/api/import/pull";
+  else if (nextPath === "/wecom/callback") nextPath = "/api/import/pull";
+  else if (nextPath !== "/api/import/pull") nextPath = `${nextPath}/api/import/pull`.replace(/\/{2,}/g, "/");
 
   url.pathname = nextPath;
   url.search = "";
   url.hash = "";
   return url.toString();
+}
+
+function normalizeBridgeStatusUrl(rawUrl) {
+  const pullUrl = normalizeBridgePullUrl(rawUrl);
+  if (!pullUrl) return "";
+  try {
+    const url = new URL(pullUrl);
+    url.pathname = url.pathname.replace(/\/pull$/, "/status");
+    return url.toString();
+  } catch {
+    return "";
+  }
 }
 
 function setupWecomAutoSync() {
@@ -621,6 +639,7 @@ async function syncWecomOrders(options = {}) {
   if (state.wecomSyncBusy) return;
 
   const pullUrl = normalizeBridgePullUrl(state.wecomBridgeUrl);
+  const statusUrl = normalizeBridgeStatusUrl(state.wecomBridgeUrl);
   if (!pullUrl) {
     if (!silentError) showToast("请先填写企业微信桥接地址");
     return;
@@ -630,6 +649,18 @@ async function syncWecomOrders(options = {}) {
   renderWecomSyncState();
 
   try {
+    if (statusUrl) {
+      const statusResponse = await fetch(statusUrl, { method: "GET" });
+      if (statusResponse.ok) {
+        const statusPayload = await statusResponse.json();
+        const pendingCount = Number(statusPayload?.count) || 0;
+        if (pendingCount <= 0) {
+          if (!silentEmpty) showToast("企业微信暂无新订单");
+          return;
+        }
+      }
+    }
+
     const response = await fetch(pullUrl, { method: "GET" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const payload = await response.json();
@@ -654,28 +685,22 @@ async function syncWecomOrders(options = {}) {
     }
 
     const incomingText = lines.join("\n");
-    state.rawText = [state.rawText.trim(), incomingText].filter(Boolean).join("\n");
+    const result = importIncomingText(incomingText, {
+      source: "wecom",
+      appendToRaw: true,
+      skipDuplicateCheck: true,
+      silentEmpty: true,
+      silentNoEntry: true,
+      silentCancel: true,
+      silentSuccess: true,
+    });
 
-    const entries = parseMessages(incomingText, state.rules);
-    if (!entries.length) {
-      saveState();
-      renderAll();
+    if (!result.parsed) {
       if (!silentEmpty) showToast("已同步，但未识别到货物数量");
       return;
     }
 
-    const duplicateHint = detectDuplicateImport(entries);
-    if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
-      saveState();
-      renderAll();
-      if (!silentEmpty) showToast("已同步到输入区，已取消入账");
-      return;
-    }
-
-    const added = appendDailyEntries(entries);
-    saveState();
-    renderAll();
-    showToast(`微信同步 ${lines.length} 条，入账 ${added} 条`);
+    showToast(`微信同步 ${lines.length} 条，入账 ${result.added} 条`);
   } catch (error) {
     console.error(error);
     if (!silentError) showToast("微信同步失败，请检查桥接地址和服务状态");
@@ -687,7 +712,7 @@ async function syncWecomOrders(options = {}) {
 
 function importIncomingText(incomingText, options = {}) {
   const text = String(incomingText || "").trim();
-  const source = String(options.source || "input");
+  const source = normalizeImportSource(options.source || "manual");
   if (!text) {
     if (!options.silentEmpty) showToast(options.emptyToast || "请先粘贴聊天记录");
     return { added: 0, parsed: 0, cancelled: false };
@@ -714,21 +739,23 @@ function importIncomingText(incomingText, options = {}) {
     return { added: 0, parsed: 0, cancelled: false };
   }
 
-  const duplicateHint = detectDuplicateImport(entries);
-  if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
-    addImportLog({
-      source,
-      text,
-      parsedCount: entries.length,
-      addedCount: 0,
-      cancelled: true,
-      details: entries,
-      createdAt: Date.now(),
-    });
-    saveState();
-    renderAll();
-    if (!options.silentCancel) showToast(options.cancelToast || "已取消录入");
-    return { added: 0, parsed: entries.length, cancelled: true };
+  if (!options.skipDuplicateCheck) {
+    const duplicateHint = detectDuplicateImport(entries);
+    if (duplicateHint && !confirmDuplicateImport(duplicateHint)) {
+      addImportLog({
+        source,
+        text,
+        parsedCount: entries.length,
+        addedCount: 0,
+        cancelled: true,
+        details: entries,
+        createdAt: Date.now(),
+      });
+      saveState();
+      renderAll();
+      if (!options.silentCancel) showToast(options.cancelToast || "已取消录入");
+      return { added: 0, parsed: entries.length, cancelled: true };
+    }
   }
 
   const added = appendDailyEntries(entries);
@@ -752,8 +779,9 @@ function importIncomingText(incomingText, options = {}) {
 }
 
 function parseCurrentRawText() {
+  const source = state.pendingImportSource === "ocr" ? "ocr" : "manual";
   return importIncomingText(state.rawText, {
-    source: "manual-parse",
+    source,
     appendToRaw: false,
     emptyToast: "请先粘贴聊天记录",
     noEntryToast: "没有识别到货物数量",
@@ -948,8 +976,11 @@ function renderImportLogs() {
       const preview = String(item.text || "").replace(/\s+/g, " ").trim().slice(0, 60);
       const sourceLabel = importSourceLabel(item.source);
       const isActive = item.id === state.selectedImportLogId;
+      const rowClasses = [isActive ? "active-log-row" : "", item.parsedCount === 0 ? "import-failed-row" : ""]
+        .filter(Boolean)
+        .join(" ");
       return `
-      <tr data-id="${escapeAttr(item.id)}" class="${isActive ? "active-log-row" : ""}">
+      <tr data-id="${escapeAttr(item.id)}" class="${rowClasses}">
         <td>${escapeHtml(formatDateTime(item.createdAt))}</td>
         <td>${escapeHtml(sourceLabel)}</td>
         <td title="${escapeAttr(item.text || "")}">${escapeHtml(preview || "-")}</td>
@@ -996,11 +1027,17 @@ function onImportLogClick(event) {
 }
 
 function importSourceLabel(source) {
-  if (source === "clipboard-button") return "复制入账";
-  if (source === "paste") return "粘贴事件";
-  if (source === "manual-parse") return "手动识别";
-  if (source === "wecom-sync") return "企业微信同步";
-  return "输入";
+  return normalizeImportSource(source);
+}
+
+function normalizeImportSource(source) {
+  const key = String(source || "")
+    .trim()
+    .toLowerCase();
+  if (["wecom", "wecom-sync", "wechat", "wx"].includes(key)) return "wecom";
+  if (["ocr", "ocr-import", "ocr-parse", "image-ocr"].includes(key)) return "ocr";
+  if (["manual", "manual-parse", "clipboard-button", "paste", "input", "clipboard"].includes(key)) return "manual";
+  return "manual";
 }
 
 function addImportLog(item) {
@@ -2742,6 +2779,7 @@ function moveOcrTextToRaw(mode) {
   }
 
   byId("rawText").value = state.rawText;
+  state.pendingImportSource = "ocr";
   saveState();
   showToast(mode === "replace" ? "已替换到消息框" : "已追加到消息框");
 }
@@ -3755,7 +3793,7 @@ function normalizeImportLog(item, index = 0) {
   return {
     id: item.id ? String(item.id) : makeId(Date.now(), "import", index),
     createdAt: Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : Date.now(),
-    source: String(item.source || "input"),
+    source: normalizeImportSource(item.source || "manual"),
     text: String(item.text || ""),
     parsedCount: Number.isFinite(Number(item.parsedCount)) ? Number(item.parsedCount) : details.length,
     addedCount: Number.isFinite(Number(item.addedCount)) ? Number(item.addedCount) : 0,

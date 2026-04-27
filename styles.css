@@ -436,6 +436,10 @@ button:disabled {
   background: #eef6ff;
 }
 
+.import-failed-row td {
+  background: #fff5f5;
+}
+
 .compare-panel textarea {
   display: block;
   min-height: 150px;
