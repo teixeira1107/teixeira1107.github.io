@@ -1252,7 +1252,7 @@ function extractItems(chunk, sourceLine, meta, rules) {
     }
 
     const resolved = resolveAfterPatternNameQuantity(match[1], match[2], match[3], rules);
-    const originalName = resolved.originalName;
+    const originalName = stripOrderPrefix(resolved.originalName);
     const quantity = resolved.quantity;
     const unit = normalizeUnit(match[3]);
     if (isValidItem(originalName, quantity, unit)) {
@@ -1262,7 +1262,7 @@ function extractItems(chunk, sourceLine, meta, rules) {
 
   if (!skipBeforePattern) {
     collectMatches(beforeRegex, chunk, usedRanges).forEach((match) => {
-      const originalName = cleanupName(match[3]);
+      const originalName = stripOrderPrefix(cleanupName(match[3]));
       const quantity = parseNumber(match[1]);
       const unit = normalizeUnit(match[2]);
       if (isValidItem(originalName, quantity, unit)) {
@@ -1352,7 +1352,7 @@ function tryResolveHeadSizeNameItem(chunk, match, sourceLine, meta, rules) {
 }
 
 function resolveAfterPatternNameQuantity(rawName, rawQuantity, rawUnit, rules) {
-  const originalName = cleanupName(rawName);
+  const originalName = stripOrderPrefix(cleanupName(rawName));
   const quantityText = String(rawQuantity || "").trim();
   const quantity = parseNumber(quantityText);
   const unit = normalizeUnit(rawUnit || "");
@@ -1373,7 +1373,7 @@ function chooseAmbiguousQuantitySplit(name, quantityText, unit, rules) {
   for (let splitIndex = 1; splitIndex < quantityText.length; splitIndex += 1) {
     const nameSuffix = quantityText.slice(0, splitIndex);
     const qtyPart = quantityText.slice(splitIndex);
-    const candidateName = cleanupName(`${name}${nameSuffix}`);
+    const candidateName = stripOrderPrefix(cleanupName(`${name}${nameSuffix}`));
     const candidateQty = parseNumber(qtyPart);
     if (!isValidItem(candidateName, candidateQty, unit)) continue;
 
@@ -1555,6 +1555,7 @@ function cleanupName(name) {
     .replace(/[^\u4e00-\u9fa5A-Za-z0-9（）()·\-]/g, "")
     .trim();
 
+  cleaned = cleaned.replace(/(\d+)\s*头$/u, "$1个头");
   return cleaned;
 }
 
@@ -3785,12 +3786,33 @@ function startsWithQuantity(value) {
   return regex.test(value);
 }
 
+function stripOrderPrefix(name) {
+  return String(name || "")
+    .replace(/^\s*\u7b2c(?:\d+|[零一二两三四五六七八九十百千万]+)?(?:条|单|份|个|批|笔)?\s*/u, "")
+    .replace(/^\s*\d+(?:条|单|份|个|批|笔)\s*/u, "")
+    .trim();
+}
+
+function isLikelyNoiseProductName(name) {
+  const raw = String(name || "").trim();
+  const stripped = stripOrderPrefix(raw);
+  const normalized = normalizeText(stripped || raw);
+  if (!normalized) return true;
+
+  // “第1条/第一单/第2份”这类排序标记，不应当入货物明细
+  if (/^\u7b2c(?:\d+|[零一二两三四五六七八九十百千万]+)?(?:条|单|份|个|批|笔)?$/u.test(raw)) return true;
+  if (/^\u7b2c$/.test(normalized)) return true;
+
+  return false;
+}
+
 function isValidItem(name, quantity, unit) {
   const normalizedName = normalizeText(name);
   return Boolean(
     name &&
       unit &&
       normalizedName &&
+      !isLikelyNoiseProductName(name) &&
       !/^\d+$/.test(normalizedName) &&
       !/^\d/.test(String(name).trim()) &&
       Number.isFinite(quantity) &&
