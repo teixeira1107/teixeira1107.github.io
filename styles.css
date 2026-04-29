@@ -127,8 +127,9 @@ textarea:focus {
 }
 
 .view-btn {
-  border: 1px solid var(--line);
-  background: #fff;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
 }
 
 .view-btn.active {
@@ -139,7 +140,7 @@ textarea:focus {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(360px, 1.1fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(420px, 1.25fr) minmax(320px, 0.75fr);
   gap: 18px;
   padding: 18px 32px 32px;
 }
@@ -195,8 +196,8 @@ textarea:focus {
 }
 
 .image-panel {
-  grid-column: 1;
-  grid-row: 2;
+  grid-column: 1 / -1;
+  grid-row: auto;
 }
 
 .actions {
@@ -231,9 +232,19 @@ textarea:focus {
 
 .summary-panel {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
+}
+
+.import-log-panel[data-view="main"] {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.compare-panel[data-view="main"] {
+  grid-column: 1 / -1;
+  grid-row: 3;
 }
 
 .status-text {
